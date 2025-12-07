@@ -1,0 +1,55 @@
+
+services:
+  superset:
+    image: superset-custom
+    container_name: superset_app
+    ports:
+      - "8088:8088"
+    environment:
+      SUPERSET_ENV: production
+      SUPERSET_SECRET_KEY: your_secret_key
+      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+    volumes:
+      - ./superset_home:/app/superset_home
+      - ./superset_config.py:/app/pythonpath/superset_config.py
+      - ./init_superset.sh:/init_superset.sh
+    entrypoint: ["/bin/bash", "/init_superset.sh"]
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:17
+    container_name: superset_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+      POSTGRES_DB: superset
+    volumes:
+      - superset_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: superset_redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - superset_redisdata:/data
+
+  celery-worker:
+    image: superset-custom
+    container_name: superset_celery
+    command: celery --app=superset.tasks.celery_app:app worker --loglevel=INFO
+    environment:
+      SUPERSET_ENV: production
+      SUPERSET_SECRET_KEY: your_secret_key
+      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+    volumes:
+      - ./superset_config.py:/app/pythonpath/superset_config.py
+    depends_on:
+      - redis
+      - postgres
+
+volumes:
+  superset_pgdata:
+  superset_redisdata:

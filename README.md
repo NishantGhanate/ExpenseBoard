@@ -25,3 +25,21 @@ docker compose up -d
 # Debugging
 > docker run --rm -it apache/superset:latest which uv
 > docker run --rm -it apache/superset:latest ls -la /app/.venv/bin/
+
+
+# Expense Dashboard
+
+Includes:
+- Superset dashboard export (`dashboard/expense_dashboard.json`)
+- Dataset (schema + sample data)
+- Dashboard screenshots (`assets/screenshots/`)
+
+The dashboard provides:
+- Monthly cashflow trends
+- Category-wise spending breakdown
+- Payment method analysis
+- Goal progress tracking
+
+Screenshots:
+![Dashboard Overview](assets/screenshots/overview.png)
+![Goals Tab](assets/screenshots/goals.png)

@@ -1,0 +1,92 @@
+slice_name: Expense Category Breakdown
+description: null
+certified_by: null
+certification_details: null
+viz_type: sunburst_v2
+params:
+  datasource: 44__table
+  viz_type: sunburst_v2
+  matrixify_show_column_headers: true
+  matrixify_mode_columns: metrics
+  matrixify_dimension_selection_mode_columns: members
+  matrixify_dimension_columns:
+    dimension: ''
+    values: []
+  matrixify_topn_value_columns: 10
+  matrixify_topn_order_columns: desc
+  matrixify_show_row_labels: true
+  matrixify_mode_rows: metrics
+  matrixify_dimension_selection_mode_rows: members
+  matrixify_dimension_rows:
+    dimension: ''
+    values: []
+  matrixify_topn_value_rows: 10
+  matrixify_topn_order_rows: desc
+  matrixify_row_height: 300
+  matrixify_fit_columns_dynamically: true
+  matrixify_charts_per_row: 4
+  columns:
+  - category
+  - tags
+  metric:
+    expressionType: SIMPLE
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: amount
+      description: null
+      expression: ''
+      filterable: true
+      groupby: true
+      id: 947
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: column
+      type_generic: 0
+      uuid: a51aeae3-78f1-4872-84f2-838eedc67c9f
+      verbose_name: null
+      warning_markdown: null
+    aggregate: SUM
+    sqlExpression: null
+    datasourceWarning: false
+    hasCustomLabel: false
+    label: SUM(amount)
+    optionName: metric_tbewsgbzelh_zq048wep6
+  adhoc_filters:
+  - expressionType: SIMPLE
+    subject: type
+    operator: IN
+    operatorId: IN
+    comparator:
+    - Debit
+    clause: WHERE
+    sqlExpression: null
+    isExtra: false
+    isNew: false
+    datasourceWarning: false
+    filterOptionName: filter_n3tjy5em4vo_gsj9kvkswno
+  - clause: WHERE
+    subject: transaction_date
+    operator: TEMPORAL_RANGE
+    comparator: No filter
+    expressionType: SIMPLE
+  row_limit: '15'
+  sort_by_metric: false
+  color_scheme: supersetColors
+  show_labels: false
+  show_labels_threshold: 5
+  show_total: false
+  label_type: key
+  number_format: SMART_NUMBER
+  date_format: smart_date
+  extra_form_data: {}
+  dashboards: []
+query_context: '{"datasource":{"id":44,"type":"table"},"force":false,"queries":[{"filters":[{"col":"type","op":"IN","val":["Debit"]},{"col":"transaction_date","op":"TEMPORAL_RANGE","val":"No
+  filter"}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":["category","tags"],"metrics":[{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount","description":null,"expression":"","filterable":true,"groupby":true,"id":947,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"column","type_generic":0,"uuid":"a51aeae3-78f1-4872-84f2-838eedc67c9f","verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(amount)","optionName":"metric_tbewsgbzelh_zq048wep6"}],"annotation_layers":[],"row_limit":15,"series_limit":0,"group_others_when_limit_reached":false,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{}}],"form_data":{"datasource":"44__table","viz_type":"sunburst_v2","matrixify_show_column_headers":true,"matrixify_mode_columns":"metrics","matrixify_dimension_selection_mode_columns":"members","matrixify_dimension_columns":{"dimension":"","values":[]},"matrixify_topn_value_columns":10,"matrixify_topn_order_columns":"desc","matrixify_show_row_labels":true,"matrixify_mode_rows":"metrics","matrixify_dimension_selection_mode_rows":"members","matrixify_dimension_rows":{"dimension":"","values":[]},"matrixify_topn_value_rows":10,"matrixify_topn_order_rows":"desc","matrixify_row_height":300,"matrixify_fit_columns_dynamically":true,"matrixify_charts_per_row":4,"columns":["category","tags"],"metric":{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount","description":null,"expression":"","filterable":true,"groupby":true,"id":947,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"column","type_generic":0,"uuid":"a51aeae3-78f1-4872-84f2-838eedc67c9f","verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(amount)","optionName":"metric_tbewsgbzelh_zq048wep6"},"adhoc_filters":[{"expressionType":"SIMPLE","subject":"type","operator":"IN","operatorId":"IN","comparator":["Debit"],"clause":"WHERE","sqlExpression":null,"isExtra":false,"isNew":false,"datasourceWarning":false,"filterOptionName":"filter_n3tjy5em4vo_gsj9kvkswno"},{"clause":"WHERE","subject":"transaction_date","operator":"TEMPORAL_RANGE","comparator":"No
+  filter","expressionType":"SIMPLE"}],"row_limit":"15","sort_by_metric":false,"color_scheme":"supersetColors","show_labels":false,"show_labels_threshold":5,"show_total":false,"label_type":"key","number_format":"SMART_NUMBER","date_format":"smart_date","extra_form_data":{},"dashboards":[],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: d4a9f6c7-9559-4789-bd64-fcdf3949cc87
+version: 1.0.0
+dataset_uuid: 43c7e60b-7cf0-4686-8063-ad42853ab5b0

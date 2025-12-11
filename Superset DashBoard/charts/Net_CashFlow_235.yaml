@@ -1,0 +1,60 @@
+slice_name: Net CashFlow
+description: null
+certified_by: null
+certification_details: null
+viz_type: big_number_total
+params:
+  datasource: 44__table
+  viz_type: big_number_total
+  matrixify_show_column_headers: true
+  matrixify_mode_columns: metrics
+  matrixify_dimension_selection_mode_columns: members
+  matrixify_dimension_columns:
+    dimension: ''
+    values: []
+  matrixify_topn_value_columns: 10
+  matrixify_topn_order_columns: desc
+  matrixify_show_row_labels: true
+  matrixify_mode_rows: metrics
+  matrixify_dimension_selection_mode_rows: members
+  matrixify_dimension_rows:
+    dimension: ''
+    values: []
+  matrixify_topn_value_rows: 10
+  matrixify_topn_order_rows: desc
+  matrixify_row_height: 300
+  matrixify_fit_columns_dynamically: true
+  matrixify_charts_per_row: 4
+  metric:
+    expressionType: SQL
+    sqlExpression: "SUM(CASE WHEN type = 'Credit' THEN amount ELSE -amount END)\r\n"
+    column: null
+    aggregate: null
+    datasourceWarning: false
+    hasCustomLabel: false
+    label: "SUM(CASE WHEN type = 'Credit' THEN amount ELSE -amount END)\r\n"
+    optionName: metric_9vcxkp4t0f_mrk8grvnw5
+  adhoc_filters:
+  - clause: WHERE
+    subject: transaction_date
+    operator: TEMPORAL_RANGE
+    comparator: No filter
+    expressionType: SIMPLE
+  header_font_size: 0.4
+  subtitle_font_size: 0.15
+  metric_name_font_size: 0.15
+  y_axis_format: SMART_NUMBER
+  time_format: smart_date
+  extra_form_data: {}
+  dashboards: []
+query_context: '{"datasource":{"id":44,"type":"table"},"force":false,"queries":[{"filters":[{"col":"transaction_date","op":"TEMPORAL_RANGE","val":"No
+  filter"}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":[],"metrics":[{"expressionType":"SQL","sqlExpression":"SUM(CASE
+  WHEN type = ''Credit'' THEN amount ELSE -amount END)\r\n","column":null,"aggregate":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(CASE
+  WHEN type = ''Credit'' THEN amount ELSE -amount END)\r\n","optionName":"metric_9vcxkp4t0f_mrk8grvnw5"}],"annotation_layers":[],"series_limit":0,"group_others_when_limit_reached":false,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{}}],"form_data":{"datasource":"44__table","viz_type":"big_number_total","matrixify_show_column_headers":true,"matrixify_mode_columns":"metrics","matrixify_dimension_selection_mode_columns":"members","matrixify_dimension_columns":{"dimension":"","values":[]},"matrixify_topn_value_columns":10,"matrixify_topn_order_columns":"desc","matrixify_show_row_labels":true,"matrixify_mode_rows":"metrics","matrixify_dimension_selection_mode_rows":"members","matrixify_dimension_rows":{"dimension":"","values":[]},"matrixify_topn_value_rows":10,"matrixify_topn_order_rows":"desc","matrixify_row_height":300,"matrixify_fit_columns_dynamically":true,"matrixify_charts_per_row":4,"metric":{"expressionType":"SQL","sqlExpression":"SUM(CASE
+  WHEN type = ''Credit'' THEN amount ELSE -amount END)\r\n","column":null,"aggregate":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(CASE
+  WHEN type = ''Credit'' THEN amount ELSE -amount END)\r\n","optionName":"metric_9vcxkp4t0f_mrk8grvnw5"},"adhoc_filters":[{"clause":"WHERE","subject":"transaction_date","operator":"TEMPORAL_RANGE","comparator":"No
+  filter","expressionType":"SIMPLE"}],"header_font_size":0.4,"subtitle_font_size":0.15,"metric_name_font_size":0.15,"y_axis_format":"SMART_NUMBER","time_format":"smart_date","extra_form_data":{},"dashboards":[],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: aede72a9-1747-477a-ba88-1bbf62b917a4
+version: 1.0.0
+dataset_uuid: 43c7e60b-7cf0-4686-8063-ad42853ab5b0

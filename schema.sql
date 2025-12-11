@@ -90,7 +90,7 @@ SELECT
     g.category,
     g.status,
     g.remarks,
-    COALESCE(SUM(t.amount) FILTER (WHERE t.type = 'Credit'), 0) AS total_contributions
+    COALESCE(SUM(t.amount) FILTER (WHERE t.goal_id = g.id), 0) AS total_contributions
 FROM goals g
 LEFT JOIN persons p ON g.person_id = p.id
 LEFT JOIN transactions t ON t.goal_id = g.id

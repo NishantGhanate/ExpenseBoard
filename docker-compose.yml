@@ -1,13 +1,23 @@
 services:
   superset:
-    image: superset-custom
+    image: ${SUPERSET_IMAGE:-superset-custom}
     container_name: superset_app
     ports:
-      - "8088:8088"
+      - "${SUPERSET_PORT:-8088}:8088"
     environment:
-      SUPERSET_ENV: production
-      SUPERSET_SECRET_KEY: your_secret_key
+      SUPERSET_ENV: ${SUPERSET_ENV:-production}
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
       SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+      DATABASE_HOST: ${DATABASE_HOST:-postgres}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_DB: ${DATABASE_DB:-superset}
+      DATABASE_USER: ${DATABASE_USER:-superset}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      CACHE_DEFAULT_TIMEOUT: ${CACHE_DEFAULT_TIMEOUT:-300}
+      RESULTS_CACHE_TIMEOUT: ${RESULTS_CACHE_TIMEOUT:-86400}
+      SQLLAB_ASYNC_TIME_LIMIT_SEC: ${SQLLAB_ASYNC_TIME_LIMIT_SEC:-0}
     volumes:
       - ./superset_home:/app/superset_home
       - ./superset_config.py:/app/pythonpath/superset_config.py
@@ -15,26 +25,29 @@ services:
     entrypoint: ["/bin/bash", "/init_superset.sh"]
     depends_on:
       - postgres
+      - redis
     networks:
       - internal
       - shared_network
 
   postgres:
-    image: postgres:17
+    image: postgres:${DATABASE_VERSION:-17}
     container_name: superset_postgres
     restart: always
     environment:
-      POSTGRES_USER: superset
-      POSTGRES_PASSWORD: superset
-      POSTGRES_DB: superset
+      POSTGRES_USER: ${DATABASE_USER:-superset}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_DB:-superset}
     volumes:
       - superset_pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DATABASE_EXTERNAL_PORT:-5432}:5432"
     networks:
       - internal
       - shared_network
 
   redis:
-    image: redis:7
+    image: redis:${REDIS_VERSION:-7}
     container_name: superset_redis
     restart: always
     command: ["redis-server", "--appendonly", "yes"]
@@ -44,13 +57,20 @@ services:
       - internal
 
   celery-worker:
-    image: superset-custom
+    image: ${SUPERSET_IMAGE:-superset-custom}
     container_name: superset_celery
-    command: celery --app=superset.tasks.celery_app:app worker --loglevel=INFO
+    command: celery --app=superset.tasks.celery_app:app worker --loglevel=${CELERY_LOG_LEVEL:-INFO}
     environment:
-      SUPERSET_ENV: production
-      SUPERSET_SECRET_KEY: your_secret_key
+      SUPERSET_ENV: ${SUPERSET_ENV:-production}
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
       SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+      DATABASE_HOST: ${DATABASE_HOST:-postgres}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_DB: ${DATABASE_DB:-superset}
+      DATABASE_USER: ${DATABASE_USER:-superset}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
     volumes:
       - ./superset_config.py:/app/pythonpath/superset_config.py
     depends_on:
@@ -65,8 +85,7 @@ volumes:
 
 networks:
   internal:
-    # Private network for internal services (redis, celery)
   shared_network:
-    name: shared_network
+    name: ${SHARED_NETWORK_NAME:-shared_network}
     driver: bridge
     attachable: true

@@ -99,6 +99,7 @@ CREATE TABLE ss_transactions (
     person_id INTEGER REFERENCES ss_persons(id) NOT NULL,
     type_id INTEGER REFERENCES ss_transaction_types(id) NOT NULL,
     category_id INTEGER REFERENCES ss_categories(id),
+    tag_id INTEGER REFERENCES ss_tags(id),
     amount DECIMAL(12, 2) NOT NULL CHECK (amount > 0),
     currency VARCHAR(3) DEFAULT 'INR',
     payment_method_id INTEGER REFERENCES ss_payment_methods(id),
@@ -110,12 +111,6 @@ CREATE TABLE ss_transactions (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Junction table for multiple tags per transaction
-CREATE TABLE ss_transaction_tags (
-    transaction_id INTEGER REFERENCES ss_transactions(id) ON DELETE CASCADE,
-    tag_id INTEGER REFERENCES ss_tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (transaction_id, tag_id)
-);
 
 -- Indexes
 CREATE INDEX idx_ss_txn_date ON ss_transactions(transaction_date DESC);

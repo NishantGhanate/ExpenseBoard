@@ -30,6 +30,11 @@ SELECT
     c.type AS category_type,
     c.color AS category_color,
 
+    -- Tag (single)
+    tg.id AS tag_id,
+    tg.name AS tag_name,
+    tg.color AS tag_color,
+
     -- Payment Method
     pm.id AS payment_method_id,
     pm.type AS payment_method_type,
@@ -40,31 +45,22 @@ SELECT
     -- Goal
     g.id AS goal_id,
     g.name AS goal_name,
-    g.color AS goal_color,
-
-    -- Tags (aggregated)
-    COALESCE(
-        (SELECT array_agg(tg.name ORDER BY tg.name)
-         FROM ss_transaction_tags ttg
-         JOIN ss_tags tg ON ttg.tag_id = tg.id
-         WHERE ttg.transaction_id = t.id),
-        ARRAY[]::VARCHAR[]
-    ) AS tags,
-
-    COALESCE(
-        (SELECT array_agg(tg.color ORDER BY tg.name)
-         FROM ss_transaction_tags ttg
-         JOIN ss_tags tg ON ttg.tag_id = tg.id
-         WHERE ttg.transaction_id = t.id),
-        ARRAY[]::VARCHAR[]
-    ) AS tag_colors
+    g.color AS goal_color
 
 FROM ss_transactions t
 LEFT JOIN ss_persons p ON t.person_id = p.id
 LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 LEFT JOIN ss_categories c ON t.category_id = c.id
+LEFT JOIN ss_tags tg ON t.tag_id = tg.id
 LEFT JOIN ss_payment_methods pm ON t.payment_method_id = pm.id
 LEFT JOIN ss_goals g ON t.goal_id = g.id;
+
+-- Recent transactions view
+CREATE VIEW ss_v_recent_transactions AS
+SELECT * FROM ss_v_transactions
+WHERE transaction_date >= CURRENT_DATE - INTERVAL '30 days'
+  AND is_active = TRUE
+ORDER BY transaction_date DESC, created_at DESC;
 
 
 -- ============================================
@@ -99,53 +95,42 @@ SELECT
     gr.name AS group_name,
     gr.color AS group_color,
 
-    -- Progress calculations
-    COALESCE(SUM(
-        CASE
-            WHEN tt.name IN ('credit', 'Credit') THEN t.amount
-            WHEN tt.name IN ('debit', 'Debit') THEN -t.amount
-            ELSE 0
-        END
-    ), 0) AS current_amount,
+    -- Progress calculations (Debit = money going towards goal = positive contribution)
+    COALESCE(SUM(t.amount), 0) AS current_amount,
 
+    -- Progress percentage
     CASE
         WHEN g.target_amount > 0 THEN
-            ROUND(
-                COALESCE(SUM(
-                    CASE
-                        WHEN tt.name IN ('credit', 'Credit') THEN t.amount
-                        WHEN tt.name IN ('debit', 'Debit') THEN -t.amount
-                        ELSE 0
-                    END
-                ), 0) / g.target_amount * 100, 2
-            )
+            ROUND(COALESCE(SUM(t.amount), 0) / g.target_amount * 100, 2)
         ELSE 0
     END AS progress_percentage,
 
     -- Remaining amount
-    g.target_amount - COALESCE(SUM(
-        CASE
-            WHEN tt.name IN ('credit', 'Credit') THEN t.amount
-            WHEN tt.name IN ('debit', 'Debit') THEN -t.amount
-            ELSE 0
-        END
-    ), 0) AS remaining_amount,
+    GREATEST(0, g.target_amount - COALESCE(SUM(t.amount), 0)) AS remaining_amount,
 
     -- Transaction count
     COUNT(t.id) AS transaction_count,
+
+    -- Total contributed
+    COALESCE(SUM(t.amount), 0) AS total_contributed,
 
     -- Days remaining
     CASE
         WHEN g.target_date IS NOT NULL THEN
             GREATEST(0, g.target_date - CURRENT_DATE)
         ELSE NULL
-    END AS days_remaining
+    END AS days_remaining,
+
+    -- Is goal achieved
+    CASE
+        WHEN COALESCE(SUM(t.amount), 0) >= g.target_amount THEN TRUE
+        ELSE FALSE
+    END AS is_achieved
 
 FROM ss_goals g
 LEFT JOIN ss_persons p ON g.person_id = p.id
 LEFT JOIN ss_groups gr ON g.group_id = gr.id
 LEFT JOIN ss_transactions t ON t.goal_id = g.id AND t.is_active = TRUE
-LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 GROUP BY g.id, p.id, p.name, p.color, gr.id, gr.name, gr.color;
 
 

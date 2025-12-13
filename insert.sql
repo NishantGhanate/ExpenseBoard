@@ -75,43 +75,45 @@ INSERT INTO ss_group_members (group_id, person_id, role) VALUES
 INSERT INTO ss_goals (name, target_amount, start_date, target_date, status, remarks, color, person_id, group_id) VALUES
 ('Emergency Fund', 500000.00, '2024-01-01', '2025-12-31', 'active', '6 months expenses', '#22C55E', 1, NULL),
 ('House Down Payment', 2000000.00, '2024-01-01', '2026-12-31', 'active', 'For new house', '#3B82F6', NULL, 1),
-('Vacation Fund', 200000.00, '2024-06-01', '2025-06-01', 'active', 'Europe trip', '#F59E0B', 2, NULL);
+('Vacation Fund', 200000.00, '2024-06-01', '2025-06-01', 'active', 'Europe trip', '#F59E0B', 2, NULL),
+('SIP Fund', 10000000.00, '2024-06-01', '2025-06-01', 'active', 'Core', '#F59E0B', 1, NULL);
 
 -- ============================================
 -- 9. TRANSACTIONS (24 records per user = 48 total)
 -- Monthly from Jan 2024 to Dec 2025
 -- ============================================
+-- ============================================
+-- 9. TRANSACTIONS (24 records per user = 48 total)
+-- ============================================
 
--- NISHANT's Transactions (person_id = 1)
 INSERT INTO ss_transactions (entity_name, transaction_date, person_id, type_id, category_id, amount, currency, payment_method_id, goal_id, description, remarks, is_active) VALUES
--- 2024
+-- NISHANT's Transactions (person_id = 1)
 ('TechCorp India', '2024-01-05', 1, 1, 1, 150000.00, 'INR', 4, NULL, 'January Salary', 'Monthly salary', TRUE),
-('HDFC MF', '2024-01-10', 1, 2, 2, 25000.00, 'INR', 4, 1, 'SIP Investment', 'Monthly SIP', TRUE),
+('HDFC MF', '2024-01-10', 1, 2, 2, 25000.00, 'INR', 4, 1, 'SIP Investment', 'Monthly SIP - Emergency Fund', TRUE),
 ('TechCorp India', '2024-02-05', 1, 1, 1, 150000.00, 'INR', 4, NULL, 'February Salary', 'Monthly salary', TRUE),
 ('ICICI Prudential', '2024-02-15', 1, 2, 10, 45000.00, 'INR', 3, NULL, 'Term Insurance Premium', 'Annual premium', TRUE),
 ('TechCorp India', '2024-03-05', 1, 1, 1, 150000.00, 'INR', 4, NULL, 'March Salary', 'Monthly salary', TRUE),
 ('HDFC Bank', '2024-03-10', 1, 2, 3, 35000.00, 'INR', 6, NULL, 'Home EMI', 'Monthly EMI', TRUE),
 ('TechCorp India', '2024-04-05', 1, 1, 1, 150000.00, 'INR', 4, NULL, 'April Salary', 'Monthly salary', TRUE),
-('Zerodha', '2024-04-20', 1, 2, 2, 50000.00, 'INR', 4, 2, 'Mutual Fund Lumpsum', 'Additional investment', TRUE),
+('Zerodha', '2024-04-20', 1, 2, 2, 50000.00, 'INR', 4, 2, 'Mutual Fund Lumpsum', 'House down payment fund', TRUE),
 ('TechCorp India', '2024-05-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'May Salary', 'Salary with increment', TRUE),
 ('Apollo Hospital', '2024-05-18', 1, 2, 7, 12000.00, 'INR', 1, NULL, 'Health Checkup', 'Annual checkup', TRUE),
 ('TechCorp India', '2024-06-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'June Salary', 'Monthly salary', TRUE),
-('BigBasket', '2024-06-12', 1, 2, 5, 8500.00, 'INR', 1, NULL, 'Monthly Groceries', 'June groceries', TRUE),
+('HDFC MF', '2024-06-12', 1, 2, 2, 25000.00, 'INR', 4, 4, 'SIP Investment', 'Monthly SIP - SIP Fund', TRUE),
 ('TechCorp India', '2024-07-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'July Salary', 'Monthly salary', TRUE),
-('Netflix', '2024-07-01', 1, 2, 6, 649.00, 'INR', 5, NULL, 'Netflix Subscription', 'Monthly subscription', TRUE),
+('HDFC MF', '2024-07-10', 1, 2, 2, 25000.00, 'INR', 4, 4, 'SIP Investment', 'Monthly SIP - SIP Fund', TRUE),
 ('TechCorp India', '2024-08-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'August Salary', 'Monthly salary', TRUE),
 ('Tata Power', '2024-08-10', 1, 2, 4, 3200.00, 'INR', 1, NULL, 'Electricity Bill', 'August bill', TRUE),
 ('TechCorp India', '2024-09-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'September Salary', 'Monthly salary', TRUE),
-('HDFC MF', '2024-09-10', 1, 2, 2, 25000.00, 'INR', 4, 1, 'SIP Investment', 'Monthly SIP', TRUE),
+('HDFC MF', '2024-09-10', 1, 2, 2, 25000.00, 'INR', 4, 1, 'SIP Investment', 'Monthly SIP - Emergency Fund', TRUE),
 ('TechCorp India', '2024-10-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'October Salary', 'Monthly salary', TRUE),
-('Income Tax Dept', '2024-10-15', 1, 2, 2, 75000.00, 'INR', 3, NULL, 'Advance Tax Q2', 'Quarterly advance tax', TRUE),
+('Zerodha', '2024-10-15', 1, 2, 2, 75000.00, 'INR', 3, 2, 'Lumpsum Investment', 'House down payment fund', TRUE),
 ('TechCorp India', '2024-11-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'November Salary', 'Monthly salary', TRUE),
-('Amazon', '2024-11-25', 1, 2, 6, 15000.00, 'INR', 2, NULL, 'Diwali Shopping', 'Festival shopping', TRUE),
+('HDFC MF', '2024-11-10', 1, 2, 2, 25000.00, 'INR', 4, 4, 'SIP Investment', 'Monthly SIP - SIP Fund', TRUE),
 ('TechCorp India', '2024-12-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'December Salary', 'Monthly salary', TRUE),
-('HDFC Bank', '2024-12-10', 1, 2, 3, 35000.00, 'INR', 6, NULL, 'Home EMI', 'Monthly EMI', TRUE),
+('HDFC MF', '2024-12-10', 1, 2, 2, 25000.00, 'INR', 4, 1, 'SIP Investment', 'Monthly SIP - Emergency Fund', TRUE),
 
--- mini's Transactions (person_id = 2)
--- 2024
+-- MINI's Transactions (person_id = 2)
 ('DesignStudio', '2024-01-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'January Salary', 'Monthly salary', TRUE),
 ('DMart', '2024-01-15', 2, 2, 5, 6500.00, 'INR', 1, NULL, 'Groceries', 'Monthly groceries', TRUE),
 ('DesignStudio', '2024-02-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'February Salary', 'Monthly salary', TRUE),
@@ -123,20 +125,19 @@ INSERT INTO ss_transactions (entity_name, transaction_date, person_id, type_id, 
 ('DesignStudio', '2024-05-07', 2, 1, 1, 90000.00, 'INR', 2, NULL, 'May Salary', 'Salary with bonus', TRUE),
 ('Star Health', '2024-05-20', 2, 2, 10, 22000.00, 'INR', 4, NULL, 'Health Insurance', 'Annual premium', TRUE),
 ('DesignStudio', '2024-06-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'June Salary', 'Monthly salary', TRUE),
-('PVR Cinemas', '2024-06-22', 2, 2, 6, 1200.00, 'INR', 5, NULL, 'Movie Night', 'Weekend movie', TRUE),
+('SBI MF', '2024-06-15', 2, 2, 2, 15000.00, 'INR', 4, 3, 'SIP Investment', 'Vacation fund SIP', TRUE),
 ('DesignStudio', '2024-07-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'July Salary', 'Monthly salary', TRUE),
 ('Mahanagar Gas', '2024-07-15', 2, 2, 4, 1800.00, 'INR', 1, NULL, 'Gas Bill', 'Monthly gas', TRUE),
 ('DesignStudio', '2024-08-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'August Salary', 'Monthly salary', TRUE),
-('Cult.fit', '2024-08-01', 2, 2, 7, 2500.00, 'INR', 1, NULL, 'Gym Membership', 'Monthly membership', TRUE),
+('SBI MF', '2024-08-15', 2, 2, 2, 15000.00, 'INR', 4, 3, 'SIP Investment', 'Vacation fund SIP', TRUE),
 ('DesignStudio', '2024-09-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'September Salary', 'Monthly salary', TRUE),
 ('SBI MF', '2024-09-15', 2, 2, 2, 15000.00, 'INR', 4, 3, 'SIP Investment', 'Vacation fund SIP', TRUE),
 ('DesignStudio', '2024-10-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'October Salary', 'Monthly salary', TRUE),
 ('Tanishq', '2024-10-28', 2, 2, 6, 45000.00, 'INR', 2, NULL, 'Diwali Jewelry', 'Festival purchase', TRUE),
 ('DesignStudio', '2024-11-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'November Salary', 'Monthly salary', TRUE),
-('Swiggy', '2024-11-15', 2, 2, 5, 3500.00, 'INR', 5, NULL, 'Food Delivery', 'Monthly food orders', TRUE),
+('SBI MF', '2024-11-15', 2, 2, 2, 15000.00, 'INR', 4, 3, 'SIP Investment', 'Vacation fund SIP', TRUE),
 ('DesignStudio', '2024-12-07', 2, 1, 1, 170000.00, 'INR', 2, NULL, 'December Salary + Bonus', 'Year end bonus', TRUE),
-('MakeMyTrip', '2024-12-20', 2, 2, 6, 35000.00, 'INR', 2, 3, 'Goa Trip Booking', 'New year vacation', TRUE);
-
+('SBI MF', '2024-12-15', 2, 2, 2, 20000.00, 'INR', 4, 3, 'SIP Investment', 'Vacation fund SIP + extra', TRUE);
 -- ============================================
 -- 10. TRANSACTION TAGS (Link tags to transactions)
 -- ============================================

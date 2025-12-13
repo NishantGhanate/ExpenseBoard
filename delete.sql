@@ -34,4 +34,9 @@ DROP TABLE IF EXISTS ss_persons CASCADE;
 
 COMMIT;
 
+-- Only for tx
+TRUNCATE TABLE ss_transactions, ss_transaction_tags RESTART IDENTITY;
 
+--- Goals
+DROP VIEW IF EXISTS ss_v_goals CASCADE;
+DROP VIEW IF EXISTS ss_v_active_goals CASCADE;

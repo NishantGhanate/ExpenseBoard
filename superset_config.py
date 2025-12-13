@@ -6,6 +6,9 @@ SQLALCHEMY_DATABASE_URI = (
     "postgresql+psycopg2://superset:superset@postgres:5432/superset"
 )
 
+SQLLAB_ASYNC_TIME_LIMIT_SEC = 0
+
+
 # Redis Cache
 CACHE_CONFIG = {
     "CACHE_TYPE": "RedisCache",
@@ -19,16 +22,16 @@ DATA_CACHE_CONFIG = CACHE_CONFIG
 class CeleryConfig:
     broker_url = "redis://redis:6379/0"
     result_backend = "redis://redis:6379/0"
-    task_annotations = {
-        "sql_lab.get_sql_results": {
-            "rate_limit": "100/s",
-        },
-    }
 
 CELERY_CONFIG = CeleryConfig
 
-# Disable async if you don't want to run a Celery worker
-# SQLLAB_ASYNC_TIME_LIMIT_SEC = 0
+# Results backend - using dict config
+RESULTS_BACKEND_CONFIG = {
+    "CACHE_TYPE": "RedisCache",
+    "CACHE_DEFAULT_TIMEOUT": 86400,
+    "CACHE_KEY_PREFIX": "superset_results_",
+    "CACHE_REDIS_URL": "redis://redis:6379/2",
+}
 
 ENABLE_PROXY_FIX = True
 ROW_LEVEL_SECURITY = True

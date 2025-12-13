@@ -1,23 +1,21 @@
 #!/bin/bash
 set -e
 
-# First-time initialization
-if [ ! -f /app/superset_home/initialized ]; then
-  echo "Running first-time setup..."
+# Always run db upgrade (safe to run multiple times)
+echo "Running database migrations..."
+superset db upgrade
 
-  superset db upgrade
+# Create admin only if not exists (the || true handles "already exists" error)
+echo "Ensuring admin user exists..."
+superset fab create-admin \
+  --username admin \
+  --firstname Superset \
+  --lastname Admin \
+  --email admin@superset.com \
+  --password admin 2>/dev/null || echo "Admin user already exists"
 
-  superset fab create-admin \
-    --username admin \
-    --firstname Superset \
-    --lastname Admin \
-    --email admin@superset.com \
-    --password admin
-
-  superset init
-
-  touch /app/superset_home/initialized
-fi
+# Always run init (safe to run multiple times)
+superset init
 
 echo "Starting Superset..."
 /usr/bin/run-server.sh

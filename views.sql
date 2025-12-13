@@ -1,14 +1,13 @@
 -- ============================================
 -- VIEW 1: Full Transaction Details
 -- ============================================
-CREATE VIEW v_transactions AS
+CREATE VIEW ss_v_transactions AS
 SELECT
     t.id,
     t.transaction_date,
     t.entity_name,
     t.amount,
     t.currency,
-    t.purpose,
     t.description,
     t.remarks,
     t.is_active,
@@ -33,6 +32,7 @@ SELECT
 
     -- Payment Method
     pm.id AS payment_method_id,
+    pm.type AS payment_method_type,
     pm.name AS payment_method_name,
     pm.bank_name,
     pm.color AS payment_method_color,
@@ -45,32 +45,32 @@ SELECT
     -- Tags (aggregated)
     COALESCE(
         (SELECT array_agg(tg.name ORDER BY tg.name)
-         FROM transaction_tags ttg
-         JOIN tags tg ON ttg.tag_id = tg.id
+         FROM ss_transaction_tags ttg
+         JOIN ss_tags tg ON ttg.tag_id = tg.id
          WHERE ttg.transaction_id = t.id),
         ARRAY[]::VARCHAR[]
     ) AS tags,
 
     COALESCE(
         (SELECT array_agg(tg.color ORDER BY tg.name)
-         FROM transaction_tags ttg
-         JOIN tags tg ON ttg.tag_id = tg.id
+         FROM ss_transaction_tags ttg
+         JOIN ss_tags tg ON ttg.tag_id = tg.id
          WHERE ttg.transaction_id = t.id),
         ARRAY[]::VARCHAR[]
     ) AS tag_colors
 
-FROM transactions t
-LEFT JOIN persons p ON t.person_id = p.id
-LEFT JOIN transaction_types tt ON t.type_id = tt.id
-LEFT JOIN categories c ON t.category_id = c.id
-LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
-LEFT JOIN goals g ON t.goal_id = g.id;
+FROM ss_transactions t
+LEFT JOIN ss_persons p ON t.person_id = p.id
+LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
+LEFT JOIN ss_categories c ON t.category_id = c.id
+LEFT JOIN ss_payment_methods pm ON t.payment_method_id = pm.id
+LEFT JOIN ss_goals g ON t.goal_id = g.id;
 
 
 -- ============================================
 -- VIEW 2: Goal Progress Tracking
 -- ============================================
-CREATE VIEW v_goals AS
+CREATE VIEW ss_v_goals AS
 SELECT
     g.id,
     g.name,
@@ -98,11 +98,6 @@ SELECT
     gr.id AS group_id,
     gr.name AS group_name,
     gr.color AS group_color,
-
-    -- Category
-    c.id AS category_id,
-    c.name AS category_name,
-    c.color AS category_color,
 
     -- Progress calculations
     COALESCE(SUM(
@@ -146,20 +141,18 @@ SELECT
         ELSE NULL
     END AS days_remaining
 
-FROM goals g
-LEFT JOIN persons p ON g.person_id = p.id
-LEFT JOIN groups gr ON g.group_id = gr.id
-LEFT JOIN categories c ON g.category_id = c.id
-LEFT JOIN transactions t ON t.goal_id = g.id AND t.is_active = TRUE
-LEFT JOIN transaction_types tt ON t.type_id = tt.id
-GROUP BY g.id, p.id, p.name, p.color, gr.id, gr.name, gr.color,
-         c.id, c.name, c.color;
+FROM ss_goals g
+LEFT JOIN ss_persons p ON g.person_id = p.id
+LEFT JOIN ss_groups gr ON g.group_id = gr.id
+LEFT JOIN ss_transactions t ON t.goal_id = g.id AND t.is_active = TRUE
+LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
+GROUP BY g.id, p.id, p.name, p.color, gr.id, gr.name, gr.color;
 
 
 -- ============================================
 -- VIEW 3: Group Details with Members
 -- ============================================
-CREATE VIEW v_groups AS
+CREATE VIEW ss_v_groups AS
 SELECT
     g.id,
     g.name,
@@ -178,23 +171,23 @@ SELECT
     array_agg(gm.role ORDER BY gm.role, p.name) AS member_roles,
 
     -- Goal stats for this group
-    (SELECT COUNT(*) FROM goals gl WHERE gl.group_id = g.id) AS total_goals,
-    (SELECT COUNT(*) FROM goals gl WHERE gl.group_id = g.id AND gl.status = 'active') AS active_goals
+    (SELECT COUNT(*) FROM ss_goals gl WHERE gl.group_id = g.id) AS total_goals,
+    (SELECT COUNT(*) FROM ss_goals gl WHERE gl.group_id = g.id AND gl.status = 'active') AS active_goals
 
-FROM groups g
-LEFT JOIN group_members gm ON g.id = gm.group_id
-LEFT JOIN persons p ON gm.person_id = p.id
+FROM ss_groups g
+LEFT JOIN ss_group_members gm ON g.id = gm.group_id
+LEFT JOIN ss_persons p ON gm.person_id = p.id
 GROUP BY g.id;
 
 
 -- ============================================
 -- VIEW 4: Person Summary with Stats
 -- ============================================
-CREATE VIEW v_persons AS
+CREATE VIEW ss_v_persons AS
 SELECT
     p.id,
     p.name,
-    p.user_email,
+    p.email,
     p.relationship,
     p.color,
     p.is_active,
@@ -220,21 +213,21 @@ SELECT
     ), 0) AS net_balance,
 
     -- Goal stats
-    (SELECT COUNT(*) FROM goals g WHERE g.person_id = p.id) AS individual_goals,
+    (SELECT COUNT(*) FROM ss_goals g WHERE g.person_id = p.id) AS individual_goals,
 
     -- Group memberships
-    (SELECT COUNT(*) FROM group_members gm WHERE gm.person_id = p.id) AS group_memberships
+    (SELECT COUNT(*) FROM ss_group_members gm WHERE gm.person_id = p.id) AS group_memberships
 
-FROM persons p
-LEFT JOIN transactions t ON p.id = t.person_id AND t.is_active = TRUE
-LEFT JOIN transaction_types tt ON t.type_id = tt.id
+FROM ss_persons p
+LEFT JOIN ss_transactions t ON p.id = t.person_id AND t.is_active = TRUE
+LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 GROUP BY p.id;
 
 
 -- ============================================
 -- VIEW 5: Monthly Summary
 -- ============================================
-CREATE VIEW v_monthly_summary AS
+CREATE VIEW ss_v_monthly_summary AS
 SELECT
     DATE_TRUNC('month', t.transaction_date)::DATE AS month,
     p.id AS person_id,
@@ -255,10 +248,10 @@ SELECT
     MIN(t.amount) AS min_amount,
     MAX(t.amount) AS max_amount
 
-FROM transactions t
-JOIN persons p ON t.person_id = p.id
-LEFT JOIN categories c ON t.category_id = c.id
-LEFT JOIN transaction_types tt ON t.type_id = tt.id
+FROM ss_transactions t
+JOIN ss_persons p ON t.person_id = p.id
+LEFT JOIN ss_categories c ON t.category_id = c.id
+LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 WHERE t.is_active = TRUE
 GROUP BY DATE_TRUNC('month', t.transaction_date),
          p.id, p.name, c.id, c.name, c.color, tt.name
@@ -268,7 +261,7 @@ ORDER BY month DESC, p.name, c.name;
 -- ============================================
 -- VIEW 6: Category-wise Summary
 -- ============================================
-CREATE VIEW v_category_summary AS
+CREATE VIEW ss_v_category_summary AS
 SELECT
     c.id AS category_id,
     c.name AS category_name,
@@ -286,9 +279,9 @@ SELECT
     -- Recent activity
     MAX(t.transaction_date) AS last_transaction_date
 
-FROM categories c
-LEFT JOIN transactions t ON c.id = t.category_id AND t.is_active = TRUE
-LEFT JOIN transaction_types tt ON t.type_id = tt.id
+FROM ss_categories c
+LEFT JOIN ss_transactions t ON c.id = t.category_id AND t.is_active = TRUE
+LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 WHERE c.is_active = TRUE
 GROUP BY c.id, c.name, c.type, c.color
 ORDER BY total_amount DESC;
@@ -297,9 +290,10 @@ ORDER BY total_amount DESC;
 -- ============================================
 -- VIEW 7: Payment Method Summary
 -- ============================================
-CREATE VIEW v_payment_method_summary AS
+CREATE VIEW ss_v_payment_method_summary AS
 SELECT
     pm.id,
+    pm.type,
     pm.name,
     pm.account_number,
     pm.bank_name,
@@ -314,9 +308,9 @@ SELECT
 
     MAX(t.transaction_date) AS last_used
 
-FROM payment_methods pm
-LEFT JOIN transactions t ON pm.id = t.payment_method_id AND t.is_active = TRUE
-LEFT JOIN transaction_types tt ON t.type_id = tt.id
+FROM ss_payment_methods pm
+LEFT JOIN ss_transactions t ON pm.id = t.payment_method_id AND t.is_active = TRUE
+LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 GROUP BY pm.id
 ORDER BY transaction_count DESC;
 
@@ -324,22 +318,22 @@ ORDER BY transaction_count DESC;
 -- ============================================
 -- VIEW 8: Tag Usage Summary
 -- ============================================
-CREATE VIEW v_tag_summary AS
+CREATE VIEW ss_v_tag_summary AS
 SELECT
     tg.id,
     tg.name,
     tg.color,
     tg.is_active,
 
-    COUNT(tt.transaction_id) AS usage_count,
+    COUNT(ttg.transaction_id) AS usage_count,
 
     COALESCE(SUM(t.amount), 0) AS total_amount,
 
     MAX(t.transaction_date) AS last_used
 
-FROM tags tg
-LEFT JOIN transaction_tags tt ON tg.id = tt.tag_id
-LEFT JOIN transactions t ON tt.transaction_id = t.id AND t.is_active = TRUE
+FROM ss_tags tg
+LEFT JOIN ss_transaction_tags ttg ON tg.id = ttg.tag_id
+LEFT JOIN ss_transactions t ON ttg.transaction_id = t.id AND t.is_active = TRUE
 WHERE tg.is_active = TRUE
 GROUP BY tg.id
 ORDER BY usage_count DESC;
@@ -348,8 +342,8 @@ ORDER BY usage_count DESC;
 -- ============================================
 -- VIEW 9: Recent Transactions (Last 30 days)
 -- ============================================
-CREATE VIEW v_recent_transactions AS
-SELECT * FROM v_transactions
+CREATE VIEW ss_v_recent_transactions AS
+SELECT * FROM ss_v_transactions
 WHERE transaction_date >= CURRENT_DATE - INTERVAL '30 days'
   AND is_active = TRUE
 ORDER BY transaction_date DESC, created_at DESC;
@@ -358,32 +352,29 @@ ORDER BY transaction_date DESC, created_at DESC;
 -- ============================================
 -- VIEW 10: Active Goals Dashboard
 -- ============================================
-CREATE VIEW v_active_goals AS
-SELECT * FROM v_goals
+CREATE VIEW ss_v_active_goals AS
+SELECT * FROM ss_v_goals
 WHERE status = 'active'
 ORDER BY
     CASE WHEN days_remaining IS NOT NULL THEN days_remaining ELSE 999999 END,
     progress_percentage DESC;
 
 
-
---- Usage
-
 -- All transactions with full details
-SELECT * FROM v_transactions WHERE is_active = TRUE ORDER BY transaction_date DESC;
+SELECT * FROM ss_v_transactions WHERE is_active = TRUE ORDER BY transaction_date DESC;
 
 -- Goal progress
 SELECT name, target_amount, current_amount, progress_percentage, days_remaining
-FROM v_active_goals;
+FROM ss_v_active_goals;
 
 -- Monthly expense breakdown
 SELECT month, category_name, total_amount
-FROM v_monthly_summary
+FROM ss_v_monthly_summary
 WHERE type_name = 'Debit'
 ORDER BY month DESC, total_amount DESC;
 
 -- Person's net balance
-SELECT name, total_credits, total_debits, net_balance FROM v_persons;
+SELECT name, total_credits, total_debits, net_balance FROM ss_v_persons;
 
 -- Most used payment methods
-SELECT name, bank_name, transaction_count, total_amount FROM v_payment_method_summary;
+SELECT name, bank_name, transaction_count, total_amount FROM ss_v_payment_method_summary;

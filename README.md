@@ -18,7 +18,8 @@ docker compose up -d
 docker logs superset_app -f
 ```
 
-**Access the dashboard:** [http://localhost:8088/login/](http://localhost:8088/login/)
+## Access the dashboard:
+> [http://localhost:8088/login/](http://localhost:8088/login/)
 
 ---
 
@@ -135,6 +136,26 @@ docker run --rm -it apache/superset:latest ls -la /app/.venv/bin/
 
 ---
 
+
+## Parse Statements
+
+- Bank Statements
+    - [] Kotak
+    - [] Union
+    - [] HDFC
+
+- SIP statements
+    - [] GROWW
+    - [] KITE
+
+
+- PhonePe Wallet statements
+    - []
+
+
+
+
 ## License
 
 MIT
+

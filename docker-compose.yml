@@ -1,4 +1,3 @@
-
 services:
   superset:
     image: superset-custom
@@ -16,6 +15,9 @@ services:
     entrypoint: ["/bin/bash", "/init_superset.sh"]
     depends_on:
       - postgres
+    networks:
+      - internal
+      - shared_network
 
   postgres:
     image: postgres:17
@@ -27,6 +29,9 @@ services:
       POSTGRES_DB: superset
     volumes:
       - superset_pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+      - shared_network
 
   redis:
     image: redis:7
@@ -35,6 +40,8 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - superset_redisdata:/data
+    networks:
+      - internal
 
   celery-worker:
     image: superset-custom
@@ -49,7 +56,17 @@ services:
     depends_on:
       - redis
       - postgres
+    networks:
+      - internal
 
 volumes:
   superset_pgdata:
   superset_redisdata:
+
+networks:
+  internal:
+    # Private network for internal services (redis, celery)
+  shared_network:
+    name: shared_network
+    driver: bridge
+    attachable: true

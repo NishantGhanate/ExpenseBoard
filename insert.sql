@@ -1,127 +1,176 @@
--- =============================================
--- Sample Data: Persons
--- =============================================
+-- ============================================
+-- SEED DATA FOR EXPENSE BOARD
+-- ============================================
 
-INSERT INTO persons (name, relationship) VALUES
-    ('Nishant', 'Self'),
-    ('Minisha', 'Spouse'),
-    ('Mini', 'Bot');
+BEGIN;
+-- ============================================
+-- 1. PERSONS (2 users)
+-- ============================================
+INSERT INTO ss_persons (name, email, relationship, color, is_active) VALUES
+('Nishant', 'nishant@example.com', 'self', '#3B82F6', TRUE),
+('Mini', 'Mini@example.com', 'spouse', '#EC4899', TRUE);
 
--- =============================================
--- Sample Data: Goals
--- =============================================
+-- ============================================
+-- 2. TAGS
+-- ============================================
+INSERT INTO ss_tags (name, is_active, color) VALUES
+('sip', TRUE, '#10B981'),
+('bills', TRUE, '#F59E0B'),
+('recurring', TRUE, '#6366F1'),
+('one-time', TRUE, '#8B5CF6'),
+('essential', TRUE, '#EF4444'),
+('discretionary', TRUE, '#14B8A6');
 
-INSERT INTO goals (person_id, name, target_amount, current_amount, target_percentage, current_percentage, start_date, target_date, category, status, remarks) VALUES
-    (1, '1 Crore Corpus', 10000000, 3500000, 100, 35, '2023-01-01', '2030-12-31', 'Retirement', 'Active', 'Long term retirement fund'),
-    (1, 'Emergency Fund', 500000, 350000, 100, 70, '2024-01-01', '2024-12-31', 'Savings', 'Active', '6 months expenses'),
-    (1, 'Car Down Payment', 300000, 180000, 100, 60, '2024-06-01', '2025-06-30', 'Purchase', 'Active', 'New car fund'),
-    (2, 'Vacation Fund', 200000, 80000, 100, 40, '2024-01-01', '2024-12-31', 'Leisure', 'Active', 'Europe trip'),
-    (1, 'Home Loan Prepayment', 1000000, 250000, 100, 25, '2024-01-01', '2026-12-31', 'Debt', 'Active', 'Reduce loan tenure');
+-- ============================================
+-- 3. CATEGORIES
+-- ============================================
+INSERT INTO ss_categories (name, type, color, is_active) VALUES
+('Salary', 'income', '#22C55E', TRUE),
+('Investment', 'investment', '#3B82F6', TRUE),
+('Home EMI', 'expense', '#EF4444', TRUE),
+('Utilities', 'expense', '#F59E0B', TRUE),
+('Groceries', 'expense', '#84CC16', TRUE),
+('Entertainment', 'expense', '#A855F7', TRUE),
+('Healthcare', 'expense', '#EC4899', TRUE),
+('Transfer', 'transfer', '#6B7280', TRUE),
+('Freelance', 'income', '#14B8A6', TRUE),
+('Term Insurance', 'expense', '#F97316', TRUE),
+('Health Insurance', 'expense', '#F97316', TRUE);
 
--- =============================================
--- Sample Data: Transactions (Oct-Dec 2024)
--- =============================================
+-- ============================================
+-- 4. PAYMENT METHODS
+-- ============================================
+INSERT INTO ss_payment_methods (type, name, account_number, bank_name, color, is_active) VALUES
+('UPI', 'Kotak UPI', 'XXXX1234', 'Kotak Mahindra Bank', '#FF0000', TRUE),
+('UPI', 'HDFC UPI', 'XXXX5678', 'HDFC Bank', '#004C8F', TRUE),
+('Net Banking', 'Kotak Net Banking', 'XXXX1234', 'Kotak Mahindra Bank', '#FF0000', TRUE),
+('Net Banking', 'HDFC Net Banking', 'XXXX5678', 'HDFC Bank', '#004C8F', TRUE),
+('Wallet', 'PhonePe', NULL, NULL, '#00BAF2', TRUE),
+('Bank Transfer', 'NEFT/IMPS', 'XXXX1234', 'Kotak Mahindra Bank', '#FF0000', TRUE);
 
--- October 2024
-INSERT INTO transactions (transaction_date, person_id, type, category, entity, amount, purpose, payment_method, account, goal_id, description, remarks, tags) VALUES
--- Salary Credits
-('2024-10-01', 1, 'Credit', 'Salary', 'TechCorp India', 185000, 'Income', 'Bank Transfer', 'HDFC Salary', NULL, 'October salary', NULL, 'salary,income'),
-('2024-10-05', 2, 'Credit', 'Salary', 'InfoSys Ltd', 95000, 'Income', 'Bank Transfer', 'ICICI Salary', NULL, 'October salary', NULL, 'salary,income'),
+-- ============================================
+-- 5. TRANSACTION TYPES
+-- ============================================
+INSERT INTO ss_transaction_types (name, is_active, color) VALUES
+('Credit', TRUE, '#22C55E'),
+('Debit', TRUE, '#EF4444'),
+('Transfer', TRUE, '#6B7280');
 
--- Investments
-('2024-10-02', 1, 'Debit', 'Investment', 'Zerodha', 25000, 'Investment', 'Auto Debit', 'HDFC Salary', 1, 'SIP - Nifty 50 Index', 'Monthly SIP', 'sip,mutual-fund'),
-('2024-10-02', 1, 'Debit', 'Investment', 'Zerodha', 15000, 'Investment', 'Auto Debit', 'HDFC Salary', 1, 'SIP - Midcap Fund', 'Monthly SIP', 'sip,mutual-fund'),
-('2024-10-05', 1, 'Debit', 'Investment', 'Kuvera', 10000, 'Investment', 'Auto Debit', 'ICICI Salary', 2, 'Liquid Fund - Emergency', NULL, 'liquid-fund,emergency'),
+-- ============================================
+-- 6. GROUPS
+-- ============================================
+INSERT INTO ss_groups (name, description, color, is_active) VALUES
+('Family', 'Joint family finances', '#8B5CF6', TRUE);
 
--- EMIs
-('2024-10-05', 1, 'Debit', 'EMI', 'HDFC Home Loan', 42000, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Home loan EMI', NULL, 'emi,home-loan'),
-('2024-10-10', 2, 'Debit', 'EMI', 'Bajaj Finance', 8500, 'Expense', 'Auto Debit', 'ICICI Salary', NULL, 'iPhone EMI', NULL, 'emi,phone'),
+-- ============================================
+-- 7. GROUP MEMBERS
+-- ============================================
+INSERT INTO ss_group_members (group_id, person_id, role) VALUES
+(1, 1, 'owner'),
+(1, 2, 'member');
 
--- Utilities
-('2024-10-08', 1, 'Debit', 'Bills & Utilities', 'Adani Electricity', 3200, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Electricity bill', NULL, 'bills,electricity'),
-('2024-10-10', 1, 'Debit', 'Bills & Utilities', 'Mahanagar Gas', 1800, 'Expense', 'UPI', 'HDFC Salary', NULL, 'Gas bill', NULL, 'bills,gas'),
-('2024-10-12', 1, 'Debit', 'Bills & Utilities', 'Jio Fiber', 1499, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Internet + TV', NULL, 'bills,internet'),
-('2024-10-12', 1, 'Debit', 'Bills & Utilities', 'Airtel', 599, 'Expense', 'UPI', 'HDFC Salary', NULL, 'Mobile recharge', NULL, 'bills,mobile'),
-('2024-10-12', 2, 'Debit', 'Bills & Utilities', 'Jio', 399, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Mobile recharge', NULL, 'bills,mobile'),
+-- ============================================
+-- 8. GOALS
+-- ============================================
+INSERT INTO ss_goals (name, target_amount, start_date, target_date, status, remarks, color, person_id, group_id) VALUES
+('Emergency Fund', 500000.00, '2024-01-01', '2025-12-31', 'active', '6 months expenses', '#22C55E', 1, NULL),
+('House Down Payment', 2000000.00, '2024-01-01', '2026-12-31', 'active', 'For new house', '#3B82F6', NULL, 1),
+('Vacation Fund', 200000.00, '2024-06-01', '2025-06-01', 'active', 'Europe trip', '#F59E0B', 2, NULL);
 
--- Groceries & Food
-('2024-10-06', 2, 'Debit', 'Groceries', 'BigBasket', 4500, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Weekly groceries', NULL, 'groceries,food'),
-('2024-10-13', 2, 'Debit', 'Groceries', 'DMart', 3800, 'Expense', 'Debit Card', 'ICICI Salary', NULL, 'Weekly groceries', NULL, 'groceries,food'),
-('2024-10-15', 1, 'Debit', 'Food & Dining', 'Swiggy', 850, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Dinner order', NULL, 'food,delivery'),
-('2024-10-20', 2, 'Debit', 'Groceries', 'Zepto', 2200, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Weekly groceries', NULL, 'groceries,food'),
-('2024-10-22', 1, 'Debit', 'Food & Dining', 'Zomato', 1200, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Office lunch', NULL, 'food,delivery'),
-('2024-10-27', 2, 'Debit', 'Groceries', 'BigBasket', 5100, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Monthly stock up', NULL, 'groceries,food'),
+-- ============================================
+-- 9. TRANSACTIONS (24 records per user = 48 total)
+-- Monthly from Jan 2024 to Dec 2025
+-- ============================================
 
--- Transportation
-('2024-10-07', 1, 'Debit', 'Transportation', 'Indian Oil', 4000, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Petrol', NULL, 'fuel,transport'),
-('2024-10-18', 1, 'Debit', 'Transportation', 'Uber', 450, 'Expense', 'UPI', 'HDFC Salary', NULL, 'Office commute', NULL, 'cab,transport'),
-('2024-10-25', 1, 'Debit', 'Transportation', 'Indian Oil', 3500, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Petrol', NULL, 'fuel,transport'),
+-- NISHANT's Transactions (person_id = 1)
+INSERT INTO ss_transactions (entity_name, transaction_date, person_id, type_id, category_id, amount, currency, payment_method_id, goal_id, description, remarks, is_active) VALUES
+-- 2024
+('TechCorp India', '2024-01-05', 1, 1, 1, 150000.00, 'INR', 4, NULL, 'January Salary', 'Monthly salary', TRUE),
+('HDFC MF', '2024-01-10', 1, 2, 2, 25000.00, 'INR', 4, 1, 'SIP Investment', 'Monthly SIP', TRUE),
+('TechCorp India', '2024-02-05', 1, 1, 1, 150000.00, 'INR', 4, NULL, 'February Salary', 'Monthly salary', TRUE),
+('ICICI Prudential', '2024-02-15', 1, 2, 10, 45000.00, 'INR', 3, NULL, 'Term Insurance Premium', 'Annual premium', TRUE),
+('TechCorp India', '2024-03-05', 1, 1, 1, 150000.00, 'INR', 4, NULL, 'March Salary', 'Monthly salary', TRUE),
+('HDFC Bank', '2024-03-10', 1, 2, 3, 35000.00, 'INR', 6, NULL, 'Home EMI', 'Monthly EMI', TRUE),
+('TechCorp India', '2024-04-05', 1, 1, 1, 150000.00, 'INR', 4, NULL, 'April Salary', 'Monthly salary', TRUE),
+('Zerodha', '2024-04-20', 1, 2, 2, 50000.00, 'INR', 4, 2, 'Mutual Fund Lumpsum', 'Additional investment', TRUE),
+('TechCorp India', '2024-05-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'May Salary', 'Salary with increment', TRUE),
+('Apollo Hospital', '2024-05-18', 1, 2, 7, 12000.00, 'INR', 1, NULL, 'Health Checkup', 'Annual checkup', TRUE),
+('TechCorp India', '2024-06-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'June Salary', 'Monthly salary', TRUE),
+('BigBasket', '2024-06-12', 1, 2, 5, 8500.00, 'INR', 1, NULL, 'Monthly Groceries', 'June groceries', TRUE),
+('TechCorp India', '2024-07-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'July Salary', 'Monthly salary', TRUE),
+('Netflix', '2024-07-01', 1, 2, 6, 649.00, 'INR', 5, NULL, 'Netflix Subscription', 'Monthly subscription', TRUE),
+('TechCorp India', '2024-08-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'August Salary', 'Monthly salary', TRUE),
+('Tata Power', '2024-08-10', 1, 2, 4, 3200.00, 'INR', 1, NULL, 'Electricity Bill', 'August bill', TRUE),
+('TechCorp India', '2024-09-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'September Salary', 'Monthly salary', TRUE),
+('HDFC MF', '2024-09-10', 1, 2, 2, 25000.00, 'INR', 4, 1, 'SIP Investment', 'Monthly SIP', TRUE),
+('TechCorp India', '2024-10-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'October Salary', 'Monthly salary', TRUE),
+('Income Tax Dept', '2024-10-15', 1, 2, 2, 75000.00, 'INR', 3, NULL, 'Advance Tax Q2', 'Quarterly advance tax', TRUE),
+('TechCorp India', '2024-11-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'November Salary', 'Monthly salary', TRUE),
+('Amazon', '2024-11-25', 1, 2, 6, 15000.00, 'INR', 2, NULL, 'Diwali Shopping', 'Festival shopping', TRUE),
+('TechCorp India', '2024-12-05', 1, 1, 1, 155000.00, 'INR', 4, NULL, 'December Salary', 'Monthly salary', TRUE),
+('HDFC Bank', '2024-12-10', 1, 2, 3, 35000.00, 'INR', 6, NULL, 'Home EMI', 'Monthly EMI', TRUE),
 
--- Shopping
-('2024-10-14', 2, 'Debit', 'Shopping', 'Amazon', 2999, 'Expense', 'Credit Card', 'ICICI Credit Card', NULL, 'Kitchen appliance', NULL, 'shopping,home'),
-('2024-10-19', 3, 'Debit', 'Shopping', 'Decathlon', 3500, 'Expense', 'Debit Card', 'HDFC Salary', NULL, 'Sports shoes', NULL, 'shopping,sports'),
-('2024-10-28', 2, 'Debit', 'Shopping', 'Myntra', 4200, 'Expense', 'Credit Card', 'ICICI Credit Card', NULL, 'Diwali clothes', NULL, 'shopping,clothes'),
+-- mini's Transactions (person_id = 2)
+-- 2024
+('DesignStudio', '2024-01-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'January Salary', 'Monthly salary', TRUE),
+('DMart', '2024-01-15', 2, 2, 5, 6500.00, 'INR', 1, NULL, 'Groceries', 'Monthly groceries', TRUE),
+('DesignStudio', '2024-02-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'February Salary', 'Monthly salary', TRUE),
+('Jio', '2024-02-10', 2, 2, 4, 999.00, 'INR', 5, NULL, 'Mobile Recharge', 'Quarterly recharge', TRUE),
+('DesignStudio', '2024-03-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'March Salary', 'Monthly salary', TRUE),
+('SBI MF', '2024-03-15', 2, 2, 2, 15000.00, 'INR', 4, 3, 'SIP Investment', 'Vacation fund SIP', TRUE),
+('DesignStudio', '2024-04-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'April Salary', 'Monthly salary', TRUE),
+('Myntra', '2024-04-12', 2, 2, 6, 8500.00, 'INR', 1, NULL, 'Summer Shopping', 'Clothes shopping', TRUE),
+('DesignStudio', '2024-05-07', 2, 1, 1, 90000.00, 'INR', 2, NULL, 'May Salary', 'Salary with bonus', TRUE),
+('Star Health', '2024-05-20', 2, 2, 10, 22000.00, 'INR', 4, NULL, 'Health Insurance', 'Annual premium', TRUE),
+('DesignStudio', '2024-06-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'June Salary', 'Monthly salary', TRUE),
+('PVR Cinemas', '2024-06-22', 2, 2, 6, 1200.00, 'INR', 5, NULL, 'Movie Night', 'Weekend movie', TRUE),
+('DesignStudio', '2024-07-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'July Salary', 'Monthly salary', TRUE),
+('Mahanagar Gas', '2024-07-15', 2, 2, 4, 1800.00, 'INR', 1, NULL, 'Gas Bill', 'Monthly gas', TRUE),
+('DesignStudio', '2024-08-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'August Salary', 'Monthly salary', TRUE),
+('Cult.fit', '2024-08-01', 2, 2, 7, 2500.00, 'INR', 1, NULL, 'Gym Membership', 'Monthly membership', TRUE),
+('DesignStudio', '2024-09-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'September Salary', 'Monthly salary', TRUE),
+('SBI MF', '2024-09-15', 2, 2, 2, 15000.00, 'INR', 4, 3, 'SIP Investment', 'Vacation fund SIP', TRUE),
+('DesignStudio', '2024-10-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'October Salary', 'Monthly salary', TRUE),
+('Tanishq', '2024-10-28', 2, 2, 6, 45000.00, 'INR', 2, NULL, 'Diwali Jewelry', 'Festival purchase', TRUE),
+('DesignStudio', '2024-11-07', 2, 1, 1, 85000.00, 'INR', 2, NULL, 'November Salary', 'Monthly salary', TRUE),
+('Swiggy', '2024-11-15', 2, 2, 5, 3500.00, 'INR', 5, NULL, 'Food Delivery', 'Monthly food orders', TRUE),
+('DesignStudio', '2024-12-07', 2, 1, 1, 170000.00, 'INR', 2, NULL, 'December Salary + Bonus', 'Year end bonus', TRUE),
+('MakeMyTrip', '2024-12-20', 2, 2, 6, 35000.00, 'INR', 2, 3, 'Goa Trip Booking', 'New year vacation', TRUE);
 
--- Entertainment
-('2024-10-12', 1, 'Debit', 'Entertainment', 'Netflix', 649, 'Expense', 'Auto Debit', 'HDFC Credit Card', NULL, 'Monthly subscription', NULL, 'entertainment,subscription'),
-('2024-10-12', 1, 'Debit', 'Entertainment', 'Spotify', 119, 'Expense', 'Auto Debit', 'HDFC Credit Card', NULL, 'Monthly subscription', NULL, 'entertainment,subscription'),
-('2024-10-20', 1, 'Debit', 'Entertainment', 'PVR Cinemas', 1400, 'Expense', 'UPI', 'HDFC Salary', NULL, 'Movie tickets', NULL, 'entertainment,movies'),
+-- ============================================
+-- 10. TRANSACTION TAGS (Link tags to transactions)
+-- ============================================
+INSERT INTO ss_transaction_tags (transaction_id, tag_id) VALUES
+-- Nishant's tags
+(2, 1),   -- SIP
+(2, 3),   -- recurring
+(4, 5),   -- essential (insurance)
+(6, 3),   -- recurring (EMI)
+(6, 5),   -- essential
+(8, 4),   -- one-time
+(10, 5),  -- essential (health)
+(12, 3),  -- recurring (groceries)
+(14, 3),  -- recurring (subscription)
+(16, 2),  -- bills
+(18, 1),  -- SIP
+(18, 3),  -- recurring
+(22, 4),  -- one-time (shopping)
+(24, 3),  -- recurring (EMI)
 
--- Health
-('2024-10-15', 1, 'Debit', 'Health', 'Apollo Pharmacy', 1200, 'Expense', 'UPI', 'HDFC Salary', NULL, 'Medicines', NULL, 'health,pharmacy'),
-('2024-10-22', 2, 'Debit', 'Health', 'Cult.fit', 2500, 'Expense', 'Auto Debit', 'ICICI Salary', NULL, 'Gym membership', NULL, 'health,fitness'),
+-- Mini's tags
+(26, 3),  -- recurring (groceries)
+(28, 2),  -- bills
+(30, 1),  -- SIP
+(30, 3),  -- recurring
+(32, 6),  -- discretionary
+(34, 5),  -- essential (insurance)
+(36, 6),  -- discretionary
+(38, 2),  -- bills
+(40, 3),  -- recurring (gym)
+(42, 1),  -- SIP
+(42, 3),  -- recurring
+(44, 4),  -- one-time
+(46, 6),  -- discretionary
+(48, 4);  -- one-time (vacation)
 
--- Bot expenses
-('2024-10-05', 3, 'Debit', 'Education', 'Module', 25000, 'Expense', 'Bank Transfer', 'HDFC Salary', NULL, 'School fees Q3', NULL, 'education,school'),
-('2024-10-16', 3, 'Debit', 'Education', 'Maitance', 3000, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Online tuition', NULL, 'education,tuition'),
-
--- Miscellaneous
-('2024-10-25', 1, 'Debit', 'Insurance', 'ICICI Prudential', 15000, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Term insurance premium', NULL, 'insurance,term'),
-('2024-10-30', 1, 'Debit', 'Savings', 'HDFC Bank', 20000, 'Savings', 'Bank Transfer', 'HDFC Salary', 3, 'Car fund transfer', 'Monthly car fund', 'savings,car'),
-
--- November 2024
-('2024-11-01', 1, 'Credit', 'Salary', 'TechCorp India', 185000, 'Income', 'Bank Transfer', 'HDFC Salary', NULL, 'November salary', NULL, 'salary,income'),
-('2024-11-05', 2, 'Credit', 'Salary', 'InfoSys Ltd', 95000, 'Income', 'Bank Transfer', 'ICICI Salary', NULL, 'November salary', NULL, 'salary,income'),
-('2024-11-02', 1, 'Debit', 'Investment', 'Zerodha', 25000, 'Investment', 'Auto Debit', 'HDFC Salary', 1, 'SIP - Nifty 50 Index', 'Monthly SIP', 'sip,mutual-fund'),
-('2024-11-02', 1, 'Debit', 'Investment', 'Zerodha', 15000, 'Investment', 'Auto Debit', 'HDFC Salary', 1, 'SIP - Midcap Fund', 'Monthly SIP', 'sip,mutual-fund'),
-('2024-11-05', 1, 'Debit', 'Investment', 'Kuvera', 10000, 'Investment', 'Auto Debit', 'ICICI Salary', 2, 'Liquid Fund - Emergency', NULL, 'liquid-fund,emergency'),
-('2024-11-05', 1, 'Debit', 'EMI', 'HDFC Home Loan', 42000, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Home loan EMI', NULL, 'emi,home-loan'),
-('2024-11-10', 2, 'Debit', 'EMI', 'Bajaj Finance', 8500, 'Expense', 'Auto Debit', 'ICICI Salary', NULL, 'iPhone EMI', NULL, 'emi,phone'),
-('2024-11-08', 1, 'Debit', 'Bills & Utilities', 'Adani Electricity', 2800, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Electricity bill', NULL, 'bills,electricity'),
-('2024-11-10', 1, 'Debit', 'Bills & Utilities', 'Mahanagar Gas', 1600, 'Expense', 'UPI', 'HDFC Salary', NULL, 'Gas bill', NULL, 'bills,gas'),
-('2024-11-12', 1, 'Debit', 'Bills & Utilities', 'Jio Fiber', 1499, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Internet + TV', NULL, 'bills,internet'),
-
--- Diwali expenses
-('2024-11-01', 2, 'Debit', 'Shopping', 'Tanishq', 45000, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Diwali jewellery', 'Festival purchase', 'shopping,diwali,jewellery'),
-('2024-11-02', 1, 'Debit', 'Shopping', 'Amazon', 12000, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Diwali gifts', NULL, 'shopping,diwali,gifts'),
-('2024-11-03', 2, 'Debit', 'Food & Dining', 'Haldirams', 3500, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Diwali sweets', NULL, 'food,diwali'),
-('2024-11-04', 1, 'Debit', 'Shopping', 'Local Market', 5000, 'Expense', 'Cash', 'Cash', NULL, 'Diwali crackers & decor', NULL, 'shopping,diwali'),
-
--- Regular November expenses
-('2024-11-06', 2, 'Debit', 'Groceries', 'BigBasket', 6200, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Weekly groceries', NULL, 'groceries,food'),
-('2024-11-13', 2, 'Debit', 'Groceries', 'DMart', 4100, 'Expense', 'Debit Card', 'ICICI Salary', NULL, 'Weekly groceries', NULL, 'groceries,food'),
-('2024-11-20', 2, 'Debit', 'Groceries', 'Zepto', 2800, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Weekly groceries', NULL, 'groceries,food'),
-('2024-11-27', 2, 'Debit', 'Groceries', 'BigBasket', 4500, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Weekly groceries', NULL, 'groceries,food'),
-('2024-11-10', 1, 'Debit', 'Transportation', 'Indian Oil', 4200, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Petrol', NULL, 'fuel,transport'),
-('2024-11-22', 1, 'Debit', 'Transportation', 'HP Petrol', 3800, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Petrol', NULL, 'fuel,transport'),
-('2024-11-12', 1, 'Debit', 'Entertainment', 'Netflix', 649, 'Expense', 'Auto Debit', 'HDFC Credit Card', NULL, 'Monthly subscription', NULL, 'entertainment,subscription'),
-('2024-11-12', 1, 'Debit', 'Entertainment', 'Spotify', 119, 'Expense', 'Auto Debit', 'HDFC Credit Card', NULL, 'Monthly subscription', NULL, 'entertainment,subscription'),
-('2024-11-15', 1, 'Debit', 'Food & Dining', 'Mainland China', 4500, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Anniversary dinner', NULL, 'food,dining'),
-('2024-11-16', 3, 'Debit', 'Education', 'Byju''s', 3000, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Online tuition', NULL, 'education,tuition'),
-('2024-11-18', 2, 'Debit', 'Health', 'Max Hospital', 2500, 'Expense', 'Credit Card', 'ICICI Credit Card', NULL, 'Health checkup', NULL, 'health,medical'),
-('2024-11-22', 2, 'Debit', 'Health', 'Cult.fit', 2500, 'Expense', 'Auto Debit', 'ICICI Salary', NULL, 'Gym membership', NULL, 'health,fitness'),
-('2024-11-25', 1, 'Credit', 'Bonus', 'TechCorp India', 50000, 'Income', 'Bank Transfer', 'HDFC Salary', NULL, 'Diwali bonus', NULL, 'bonus,income'),
-('2024-11-26', 1, 'Debit', 'Investment', 'Zerodha', 30000, 'Investment', 'Bank Transfer', 'HDFC Salary', 1, 'Bonus investment', 'Lump sum from bonus', 'investment,bonus'),
-('2024-11-30', 1, 'Debit', 'Savings', 'HDFC Bank', 20000, 'Savings', 'Bank Transfer', 'HDFC Salary', 3, 'Car fund transfer', 'Monthly car fund', 'savings,car'),
-('2024-11-28', 2, 'Debit', 'Savings', 'ICICI Bank', 10000, 'Savings', 'Bank Transfer', 'ICICI Salary', 4, 'Vacation fund', 'Europe trip saving', 'savings,vacation'),
-
--- December 2024
-('2024-12-01', 1, 'Credit', 'Salary', 'TechCorp India', 185000, 'Income', 'Bank Transfer', 'HDFC Salary', NULL, 'December salary', NULL, 'salary,income'),
-('2024-12-05', 2, 'Credit', 'Salary', 'InfoSys Ltd', 95000, 'Income', 'Bank Transfer', 'ICICI Salary', NULL, 'December salary', NULL, 'salary,income'),
-('2024-12-02', 1, 'Debit', 'Investment', 'Zerodha', 25000, 'Investment', 'Auto Debit', 'HDFC Salary', 1, 'SIP - Nifty 50 Index', 'Monthly SIP', 'sip,mutual-fund'),
-('2024-12-02', 1, 'Debit', 'Investment', 'Zerodha', 15000, 'Investment', 'Auto Debit', 'HDFC Salary', 1, 'SIP - Midcap Fund', 'Monthly SIP', 'sip,mutual-fund'),
-('2024-12-05', 1, 'Debit', 'Investment', 'Kuvera', 10000, 'Investment', 'Auto Debit', 'ICICI Salary', 2, 'Liquid Fund - Emergency', NULL, 'liquid-fund,emergency'),
-('2024-12-05', 1, 'Debit', 'EMI', 'HDFC Home Loan', 42000, 'Expense', 'Auto Debit', 'HDFC Salary', NULL, 'Home loan EMI', NULL, 'emi,home-loan'),
-('2024-12-05', 1, 'Debit', 'EMI', 'HDFC Home Loan', 100000, 'Expense', 'Bank Transfer', 'HDFC Salary', 5, 'Home loan prepayment', 'Year end prepayment', 'emi,home-loan,prepayment'),
-('2024-12-06', 2, 'Debit', 'Groceries', 'BigBasket', 5500, 'Expense', 'UPI', 'ICICI Salary', NULL, 'Weekly groceries', NULL, 'groceries,food'),
-('2024-12-07', 1, 'Debit', 'Transportation', 'Indian Oil', 4000, 'Expense', 'Credit Card', 'HDFC Credit Card', NULL, 'Petrol', NULL, 'fuel,transport');
+COMMIT;

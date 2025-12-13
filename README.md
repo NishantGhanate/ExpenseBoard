@@ -77,7 +77,7 @@ docker compose up -d
 Includes:
 - Superset dashboard export (`dashboard/expense_dashboard.json`)
 - Dataset (schema + sample data)
-- Dashboard screenshots (`assets/screenshots/`)
+- Dashboard screenshots (`Screenshots/`)
 
 The dashboard provides:
 - Monthly cashflow trends
@@ -86,5 +86,5 @@ The dashboard provides:
 - Goal progress tracking
 
 Screenshots:
-![Dashboard Overview](assets/screenshots/overview.png)
-![Goals Tab](assets/screenshots/goals.png)
+![Dashboard Overview](Screenshots/Dashboard.jpg)
+![Goals Tab](Screenshots/Goals.jpg)

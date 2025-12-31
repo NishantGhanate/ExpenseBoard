@@ -15,7 +15,7 @@ SELECT
     t.updated_at,
 
     -- Person
-    p.id AS person_id,
+    p.id AS user_id,
     p.name AS person_name,
     p.color AS person_color,
 
@@ -48,7 +48,7 @@ SELECT
     g.color AS goal_color
 
 FROM ss_transactions t
-LEFT JOIN ss_persons p ON t.person_id = p.id
+LEFT JOIN ss_users p ON t.user_id = p.id
 LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 LEFT JOIN ss_categories c ON t.category_id = c.id
 LEFT JOIN ss_tags tg ON t.tag_id = tg.id
@@ -81,12 +81,12 @@ SELECT
 
     -- Ownership type
     CASE
-        WHEN g.person_id IS NOT NULL THEN 'individual'
+        WHEN g.user_id IS NOT NULL THEN 'individual'
         ELSE 'group'
     END AS ownership_type,
 
     -- Person (for individual goals)
-    p.id AS person_id,
+    p.id AS user_id,
     p.name AS person_name,
     p.color AS person_color,
 
@@ -128,7 +128,7 @@ SELECT
     END AS is_achieved
 
 FROM ss_goals g
-LEFT JOIN ss_persons p ON g.person_id = p.id
+LEFT JOIN ss_users p ON g.user_id = p.id
 LEFT JOIN ss_groups gr ON g.group_id = gr.id
 LEFT JOIN ss_transactions t ON t.goal_id = g.id AND t.is_active = TRUE
 GROUP BY g.id, p.id, p.name, p.color, gr.id, gr.name, gr.color;
@@ -148,7 +148,7 @@ SELECT
     g.updated_at,
 
     -- Member count
-    COUNT(gm.person_id) AS member_count,
+    COUNT(gm.user_id) AS member_count,
 
     -- Members list
     array_agg(p.name ORDER BY gm.role, p.name) AS member_names,
@@ -161,7 +161,7 @@ SELECT
 
 FROM ss_groups g
 LEFT JOIN ss_group_members gm ON g.id = gm.group_id
-LEFT JOIN ss_persons p ON gm.person_id = p.id
+LEFT JOIN ss_users p ON gm.user_id = p.id
 GROUP BY g.id;
 
 
@@ -198,13 +198,13 @@ SELECT
     ), 0) AS net_balance,
 
     -- Goal stats
-    (SELECT COUNT(*) FROM ss_goals g WHERE g.person_id = p.id) AS individual_goals,
+    (SELECT COUNT(*) FROM ss_goals g WHERE g.user_id = p.id) AS individual_goals,
 
     -- Group memberships
-    (SELECT COUNT(*) FROM ss_group_members gm WHERE gm.person_id = p.id) AS group_memberships
+    (SELECT COUNT(*) FROM ss_group_members gm WHERE gm.user_id = p.id) AS group_memberships
 
-FROM ss_persons p
-LEFT JOIN ss_transactions t ON p.id = t.person_id AND t.is_active = TRUE
+FROM ss_users p
+LEFT JOIN ss_transactions t ON p.id = t.user_id AND t.is_active = TRUE
 LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 GROUP BY p.id;
 
@@ -215,7 +215,7 @@ GROUP BY p.id;
 CREATE VIEW ss_v_monthly_summary AS
 SELECT
     DATE_TRUNC('month', t.transaction_date)::DATE AS month,
-    p.id AS person_id,
+    p.id AS user_id,
     p.name AS person_name,
 
     -- Category breakdown
@@ -234,7 +234,7 @@ SELECT
     MAX(t.amount) AS max_amount
 
 FROM ss_transactions t
-JOIN ss_persons p ON t.person_id = p.id
+JOIN ss_users p ON t.user_id = p.id
 LEFT JOIN ss_categories c ON t.category_id = c.id
 LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
 WHERE t.is_active = TRUE

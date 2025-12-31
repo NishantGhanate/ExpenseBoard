@@ -137,22 +137,14 @@ docker run --rm -it apache/superset:latest ls -la /app/.venv/bin/
 ---
 
 
-## Parse Statements
-
-- Bank Statements
-    - [] Kotak
-    - [] Union
-    - [] HDFC
-
-- SIP statements
-    - [] GROWW
-    - [] KITE
 
 
-- PhonePe Wallet statements
-    - []
+## Docker database
+> docker exec -it superset_postgres psql -U superset -d superset
 
+> docker exec -it superset_postgres psql -U superset -d superset -W
 
+> docker exec -it superset_postgres psql -U superset -c "ALTER USER superset PASSWORD 'superset';"
 
 
 ## License

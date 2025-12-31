@@ -1,15 +1,38 @@
 
 BEGIN;
--- Persons table
-CREATE TABLE ss_persons (
+
+
+-- Create ss_users FIRST
+CREATE TABLE ss_users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100),
     relationship VARCHAR(50),
     color VARCHAR(7),
     is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
 );
+
+-- Then create enum and bank_accounts
+CREATE TYPE account_type_enum AS ENUM ('SAVINGS', 'CURRENT', 'SALARY', 'NRE', 'NRO', 'FD', 'RD');
+
+CREATE TABLE ss_bank_accounts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES ss_users(id) ON DELETE CASCADE,
+    number VARCHAR(20) NOT NULL,
+    ifsc_code VARCHAR(11),
+    type account_type_enum,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+    CONSTRAINT uq_bank_accounts_number UNIQUE (number)
+);
+
+CREATE INDEX idx_bank_accounts_number ON ss_bank_accounts(number);
+CREATE INDEX idx_bank_accounts_user_id ON ss_bank_accounts(user_id);
+
 
 -- Tags -- 'sip', 'bills', 'recurring', 'one-time'
 CREATE TABLE ss_tags (
@@ -56,31 +79,40 @@ CREATE TABLE ss_groups (
 -- Junction table: Group members (many-to-many)
 CREATE TABLE ss_group_members (
     group_id INTEGER REFERENCES ss_groups(id) ON DELETE CASCADE,
-    person_id INTEGER REFERENCES ss_persons(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES ss_users(id) ON DELETE CASCADE,
     role VARCHAR(50) DEFAULT 'member',
     joined_at TIMESTAMP DEFAULT NOW(),
-    PRIMARY KEY (group_id, person_id)
+    PRIMARY KEY (group_id, user_id)
 );
 
 -- Financial goals
+CREATE TYPE goal_status_enum AS ENUM ('ACTIVE', 'ACHIEVED', 'PAUSED', 'CANCELLED');
+
 CREATE TABLE ss_goals (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     target_amount DECIMAL(14, 2),
     start_date DATE,
     target_date DATE,
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'achieved', 'paused', 'cancelled')),
+    status goal_status_enum DEFAULT 'active',
     remarks TEXT,
     color VARCHAR(7),
-    person_id INTEGER REFERENCES ss_persons(id),
-    group_id INTEGER REFERENCES ss_groups(id),
+    user_id INTEGER REFERENCES ss_users(id) ON DELETE CASCADE,
+    group_id INTEGER REFERENCES ss_groups(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
+
     CONSTRAINT goal_owner_check CHECK (
-        (person_id IS NOT NULL AND group_id IS NULL) OR
-        (person_id IS NULL AND group_id IS NOT NULL)
-    )
+        (user_id IS NOT NULL AND group_id IS NULL) OR
+        (user_id IS NULL AND group_id IS NOT NULL)
+    ),
+
+    CONSTRAINT valid_dates CHECK (target_date IS NULL OR target_date >= start_date),
+    CONSTRAINT valid_amount CHECK (target_amount > 0)
 );
+
+CREATE INDEX idx_ss_goals_user ON ss_goals(user_id);
+CREATE INDEX idx_ss_goals_status ON ss_goals(status) WHERE status = 'active';
 
 -- Credit, debit, internal transfer
 CREATE TABLE ss_transaction_types (
@@ -96,7 +128,8 @@ CREATE TABLE ss_transactions (
     id SERIAL PRIMARY KEY,
     entity_name VARCHAR(200),
     transaction_date DATE NOT NULL,
-    person_id INTEGER REFERENCES ss_persons(id) NOT NULL,
+    user_id INTEGER REFERENCES ss_users(id) NOT NULL,
+    bank_id INTEGER REFERENCES ss_bank_accounts(id) NOT NULL,
     type_id INTEGER REFERENCES ss_transaction_types(id) NOT NULL,
     category_id INTEGER REFERENCES ss_categories(id),
     tag_id INTEGER REFERENCES ss_tags(id),
@@ -104,22 +137,29 @@ CREATE TABLE ss_transactions (
     currency VARCHAR(3) DEFAULT 'INR',
     payment_method_id INTEGER REFERENCES ss_payment_methods(id),
     goal_id INTEGER REFERENCES ss_goals(id),
+    reference_id VARCHAR(100),
     description TEXT,
     remarks TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
-);
 
+    -- Prevent exact duplicates: same person, date, amount, type, and reference
+    CONSTRAINT uq_transaction_reference
+        UNIQUE NULLS NOT DISTINCT (user_id, reference_id),
+
+    -- Fallback for transactions without reference_id
+    CONSTRAINT uq_transaction_no_reference
+        UNIQUE NULLS NOT DISTINCT (user_id, transaction_date, amount, type_id, entity_name, description)
+        WHERE reference_id IS NULL
+);
 
 -- Indexes
 CREATE INDEX idx_ss_txn_date ON ss_transactions(transaction_date DESC);
-CREATE INDEX idx_ss_txn_person ON ss_transactions(person_id);
 CREATE INDEX idx_ss_txn_category ON ss_transactions(category_id);
 CREATE INDEX idx_ss_txn_goal ON ss_transactions(goal_id) WHERE goal_id IS NOT NULL;
 CREATE INDEX idx_ss_txn_type ON ss_transactions(type_id);
-CREATE INDEX idx_ss_goals_person ON ss_goals(person_id);
-CREATE INDEX idx_ss_goals_status ON ss_goals(status) WHERE status = 'active';
-CREATE INDEX idx_ss_group_members_person ON ss_group_members(person_id);
+
+CREATE INDEX idx_ss_group_members_user ON ss_group_members(user_id);
 
 COMMIT;

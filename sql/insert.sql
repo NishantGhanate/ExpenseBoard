@@ -6,9 +6,8 @@ BEGIN;
 -- ============================================
 -- 1. PERSONS (2 users)
 -- ============================================
-INSERT INTO ss_persons (name, email, relationship, color, is_active) VALUES
-('Nishant', 'nishant@example.com', 'self', '#3B82F6', TRUE),
-('Mini', 'Mini@example.com', 'spouse', '#EC4899', TRUE);
+INSERT INTO ss_users (name, email, relationship, color, is_active) VALUES
+('Nishant', 'nishant7.ng@example.com', 'self', '#3B82F6', TRUE),
 
 -- ============================================
 -- 2. TAGS

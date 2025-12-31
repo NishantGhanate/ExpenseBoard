@@ -13,13 +13,13 @@ DATABASE_USER = os.environ.get("DATABASE_USER", "superset")
 DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD", "superset")
 DATABASE_HOST = os.environ.get("DATABASE_HOST", "postgres")
 DATABASE_PORT = os.environ.get("DATABASE_PORT", "5432")
-DATABASE_DB = os.environ.get("DATABASE_DB", "superset")
+DATABASE_NAME = os.environ.get("DATABASE_NAME", "superset")
 
 # URL encode password to handle special characters (@, #, %, etc.)
 DATABASE_PASSWORD_ENCODED = quote_plus(DATABASE_PASSWORD)
 
 SQLALCHEMY_DATABASE_URI = (
-    f"postgresql+psycopg2://{DATABASE_USER}:{DATABASE_PASSWORD_ENCODED}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_DB}"
+    f"postgresql+psycopg2://{DATABASE_USER}:{DATABASE_PASSWORD_ENCODED}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 )
 
 # ============================================

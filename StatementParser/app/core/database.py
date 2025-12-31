@@ -1,124 +1,131 @@
+"""
+Reusable PostgreSQL database module using psycopg3
+> pip install psycopg[binary,pool]
+> python ./app/core/database.py
+"""
 
-# """
-# > source .env
-# > python ./app/core/database.py
-# """
+from contextlib import contextmanager
+from typing import Any, Generator
 
-# from contextlib import contextmanager
+import psycopg
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
-# import pyodbc
-# from celery.backends.database.session import ResultModelBase
-# from sqlalchemy import create_engine, text
+from app.config.settings import settings
 
-# # from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-# from sqlalchemy.orm import declarative_base, sessionmaker
-
-# from app.config.settings import settings
-
-
-
-# # For sync
-# sync_engine = create_engine(
-#     url=settings.SQL_DATABASE_URL,
-#     pool_size=50,  # number of connections to keep in the pool
-#     max_overflow=100,  # extra connections beyond pool_size
-#     pool_timeout=30,  # seconds to wait before giving up
-#     pool_recycle=1800,  # recycle connections after 30 minutes
-#     echo=True,  # set to True for SQL logging
-# )
-
-# SyncSessionLocal = sessionmaker(bind=sync_engine, autoflush=False, autocommit=False)
-# session = SyncSessionLocal()
-
-# Base = declarative_base()
+# Connection pool (thread-safe, reuses connections)
+pool = ConnectionPool(
+    conninfo=settings.SQL_DATABASE_URL,  # postgresql://user:pass@host:port/db
+    min_size=5,
+    max_size=50,
+    timeout=30,
+    max_idle=300,  # close idle connections after 5 min
+)
 
 
-# def get_sql_odbc_connection() -> pyodbc.Connection:  # pylint: disable=c-extension-no-member
-#     """
-#     Returns single connection
-#     """
-#     conn_str = (
-#         f"DRIVER={settings.DB_DRIVER};"
-#         f"SERVER={settings.DB_SERVER},{settings.DB_PORT};"
-#         f"DATABASE={settings.DB_NAME};"
-#         f"UID={settings.DB_USER};"
-#         f"PWD={settings.DB_PWD};"
-#         "TrustServerCertificate=yes"
-#     )
-#     conn = pyodbc.connect(conn_str)
-#     return conn
+@contextmanager
+def get_connection() -> Generator[psycopg.Connection, None, None]:
+    """Get a connection from the pool."""
+    conn = pool.getconn()
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        pool.putconn(conn)
 
 
-# async def async_init_celery_tables(async_engine) -> None:
-#     """
-#     Optional : for async engine
-#     Create Celery's result tables using the async engine.
-#     """
-#     async with async_engine.begin() as conn:
-#         await conn.run_sync(ResultModelBase.metadata.create_all)
+@contextmanager
+def get_cursor(dict_results: bool = True) -> Generator[psycopg.Cursor, None, None]:
+    """Get a cursor with automatic connection handling."""
+    row_factory = dict_row if dict_results else None
+    with get_connection() as conn:
+        with conn.cursor(row_factory=row_factory) as cur:
+            yield cur
 
 
-# def init_celery_tables_sync(engine) -> None:
-#     """
-#     Create Celery's result tables using the sync SQLAlchemy engine.
-#     """
-#     with engine.begin() as conn:
-#         ResultModelBase.metadata.create_all(bind=conn)
+def execute(query: str, params: tuple | dict | None = None) -> None:
+    """Execute a query (INSERT, UPDATE, DELETE)."""
+    with get_cursor() as cur:
+        cur.execute(query, params)
 
 
-# @contextmanager
-# def get_sync_db():
-#     """
-#     Sync DB connection generator
-#     """
-#     db = SyncSessionLocal()
-#     try:
-#         yield db
-#     except Exception:
-#         db.rollback()
-#         raise
-#     finally:
-#         db.close()
+def fetch_one(query: str, params: tuple | dict | None = None) -> dict | None:
+    """Fetch a single row as dict."""
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return cur.fetchone()
 
 
-# def dispose_engine():
-#     """
-#     Dispose the async engine (closes pools and physical connections).
-#     """
-#     sync_engine.dispose()
+def fetch_all(query: str, params: tuple | dict | None = None) -> list[dict]:
+    """Fetch all rows as list of dicts."""
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return cur.fetchall()
 
 
-# # For testing connection
-# if __name__ == "__main__":
-
-#     def test_odbc_connection():
-#         """Validate db connection"""
-#         try:
-#             conn = get_sql_odbc_connection()
-#             cursor = conn.cursor()
-#             cursor.execute("SELECT 1")
-#             result = cursor.fetchone()
-#             assert result[0] == 1
-#             print("ODBC connection test passed.")
-#             conn.close()
-#         except Exception as e:
-#             print(f"ODBC connection test failed: {e}")
-
-#     def test_db_connection():
-#         """
-#         Validate via sql alcmey
-#         """
-#         try:
-#             with get_sync_db() as db:
-#                 # Simple query to test connection
-#                 result = db.execute(text("SELECT 1"))
-#                 print("Connection successful:", result.scalar())
-#         except Exception as e:
-#             print("ODBC connection test failed:", e)
-
-#     test_odbc_connection()
-#     test_db_connection()
+def fetch_val(query: str, params: tuple | dict | None = None) -> Any:
+    """Fetch a single value."""
+    with get_cursor(dict_results=False) as cur:
+        cur.execute(query, params)
+        row = cur.fetchone()
+        return row[0] if row else None
 
 
+def execute_many(query: str, params_list: list[tuple | dict]) -> None:
+    """Execute query with multiple parameter sets (bulk insert/update)."""
+    with get_cursor() as cur:
+        cur.executemany(query, params_list)
 
 
+def execute_returning(query: str, params: tuple | dict | None = None) -> dict | None:
+    """Execute INSERT/UPDATE with RETURNING clause."""
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return cur.fetchone()
+
+
+def close_pool() -> None:
+    """Close all connections in the pool."""
+    pool.close()
+
+
+# --- Testing ---
+if __name__ == "__main__":
+
+    def test_connection():
+        """Test basic connectivity."""
+        result = fetch_val("SELECT 1")
+        assert result == 1
+        print("✓ Connection test passed")
+
+    def test_fetch_all():
+        """Test fetching multiple rows."""
+        rows = fetch_all("SELECT table_name FROM information_schema.tables LIMIT 5")
+        print(f"✓ Fetched {len(rows)} tables")
+
+    def test_parameterized():
+        """Test parameterized queries."""
+        result = fetch_one("SELECT %s AS name, %s AS value", ("test", 123))
+        assert result["name"] == "test"
+        assert result["value"] == 123
+        print("✓ Parameterized query test passed")
+
+    def test_named_params():
+        """Test named parameters."""
+        result = fetch_one(
+            "SELECT %(name)s AS name, %(value)s AS value",
+            {"name": "hello", "value": 456}
+        )
+        assert result["name"] == "hello"
+        print("✓ Named parameters test passed")
+
+    # Run tests
+    test_connection()
+    test_fetch_all()
+    test_parameterized()
+    test_named_params()
+
+    close_pool()

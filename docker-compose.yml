@@ -1,40 +1,15 @@
 services:
-  superset:
-    image: ${SUPERSET_IMAGE:-superset-custom}
-    container_name: superset_app
-    ports:
-      - "${SUPERSET_PORT:-8088}:8088"
-    environment:
-      SUPERSET_ENV: ${SUPERSET_ENV:-production}
-      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
-      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
-      DATABASE_HOST: ${DATABASE_HOST:-postgres}
-      DATABASE_PORT: ${DATABASE_PORT:-5432}
-      DATABASE_DB: ${DATABASE_DB:-superset}
-      DATABASE_USER: ${DATABASE_USER:-superset}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-    volumes:
-      - ./superset_home:/app/superset_home
-      - ./superset_config.py:/app/pythonpath/superset_config.py
-      - ./init_superset.sh:/init_superset.sh
-    entrypoint: ["/bin/bash", "/init_superset.sh"]
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - internal
-      - shared_network
 
   postgres:
     image: postgres:${DATABASE_VERSION:-17}
     container_name: superset_postgres
     restart: always
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${DATABASE_USER:-superset}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE_DB:-superset}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-superset}
+      POSTGRES_DB: ${DATABASE_NAME:-superset}
     volumes:
       - superset_pgdata:/var/lib/postgresql/data
     ports:
@@ -56,27 +31,59 @@ services:
       - internal
       - shared_network
 
-  # Superset Celery Worker
+  superset:
+    image: ${SUPERSET_IMAGE:-superset-custom}
+    container_name: superset_app
+    env_file:
+      - .env
+    ports:
+      - "${SUPERSET_PORT:-8088}:8088"
+    environment:
+      SUPERSET_ENV: ${SUPERSET_ENV:-production}
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-changeme}
+      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+      DATABASE_HOST: ${DATABASE_HOST:-postgres}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_DB: ${DATABASE_NAME:-superset}
+      DATABASE_USER: ${DATABASE_USER:-superset}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-superset}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+    volumes:
+      - ./superset_home:/app/superset_home
+      - ./SuperSetBoard/superset_config.py:/app/pythonpath/superset_config.py
+      - ./SuperSetBoard/init_superset.sh:/init_superset.sh
+    entrypoint: ["/bin/bash", "/init_superset.sh"]
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - internal
+      - shared_network
+
   superset-celery-worker:
     image: ${SUPERSET_IMAGE:-superset-custom}
     container_name: superset_celery
+    env_file:
+      - .env
     command: celery --app=superset.tasks.celery_app:app worker --loglevel=${CELERY_LOG_LEVEL:-INFO} -Q superset
     environment:
       SUPERSET_ENV: ${SUPERSET_ENV:-production}
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
       SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
-      DATABASE_HOST: ${DATABASE_HOST:-postgres}
-      DATABASE_PORT: ${DATABASE_PORT:-5432}
-      DATABASE_DB: ${DATABASE_DB:-superset}
-      DATABASE_USER: ${DATABASE_USER:-superset}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_DB: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
+      CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
     volumes:
-      - ./superset_config.py:/app/pythonpath/superset_config.py
+      - ./SuperSetBoard/superset_config.py:/app/pythonpath/superset_config.py
     depends_on:
-      - redis
       - postgres
+      - redis
     networks:
       - internal
       - shared_network
@@ -85,19 +92,28 @@ services:
   api:
     build: ./StatementParser
     container_name: statement_parser_api
+    restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "${API_PORT:-8000}:8000"
     environment:
-      DATABASE_URL: postgresql://${DATABASE_USER:-superset}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_DB:-superset}
+      PYTHONPATH: /app
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_PORT: ${DATABASE_PORT}
       REDIS_URL: redis://redis:6379/1
-      CELERY_BROKER_URL: redis://redis:6379/1
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
     volumes:
       - ./StatementParser/files:/app/files
     depends_on:
-      - redis
       - postgres
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - redis
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+    # command: gunicorn main:app -c gunicorn.conf.py
     networks:
       - internal
       - shared_network
@@ -106,17 +122,25 @@ services:
   statement-parser-worker:
     build: ./StatementParser
     container_name: statement_parser_worker
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://${DATABASE_USER:-superset}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_DB:-superset}
+      PYTHONPATH: /app
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_PORT: ${DATABASE_PORT}
       REDIS_URL: redis://redis:6379/1
-      CELERY_BROKER_URL: redis://redis:6379/1
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
     volumes:
       - ./StatementParser/files:/app/files
     depends_on:
-      - redis
       - postgres
-    command: celery -A app.celery_app worker --loglevel=info -Q statement_parser
+      - redis
+    command: celery -A app.core.celery_app worker --loglevel=info -Q statement_parser
     networks:
       - internal
       - shared_network
@@ -125,15 +149,20 @@ services:
   statement-parser-beat:
     build: ./StatementParser
     container_name: statement_parser_beat
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://${DATABASE_USER:-superset}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_DB:-superset}
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
       REDIS_URL: redis://redis:6379/1
-      CELERY_BROKER_URL: redis://redis:6379/1
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      sCELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
+
     depends_on:
-      - redis
       - postgres
-    command: celery -A app.celery_app beat --loglevel=info
+      - redis
+    command: celery -A app.core.celery_app beat --loglevel=info
     networks:
       - internal
       - shared_network

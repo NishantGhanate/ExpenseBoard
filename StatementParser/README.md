@@ -57,8 +57,13 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your configuration
 
-# [OPTIONAL] Run migrations
-python -m alembic upgrade head
+$ echo "/mnt/d/Github/ExpenseBoard/StatementParser" > $(python -c "import site; print(site.getsitepackages()[0])")/statementparser.pth
+
+or
+$ echo "/mnt/d/Github/ExpenseBoard/StatementParser" > /mnt/d/Github/ExpenseBoard/StatementParser/venv/lib/python3.12/site-packages/statementparser.pth
+
+## Verify it worked
+python -c "import sys; print('\n'.join(sys.path))"
 
 # Start the application
 uvicorn app.main:app --reload
@@ -155,3 +160,4 @@ celery -A app.celery_app beat --loglevel=info
 ## License
 
 MIT License
+

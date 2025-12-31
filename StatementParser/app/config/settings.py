@@ -6,12 +6,12 @@ Load up settings config for project, single point of config
 """
 
 from enum import Enum
+from pathlib import Path
 from typing import List, Optional
 from urllib.parse import quote_plus
-from pathlib import Path
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -57,13 +57,12 @@ class Settings(BaseSettings):
     TIMEZONE: str = "Asia/Kolkata"
 
     # DB config
-    DB_TYPE: DatabaseType
-    DB_USER: str
-    DB_PWD: str
-    DB_SERVER: str
-    DB_PORT: str
-    DB_NAME: str
-    DB_DRIVER: Optional[str]
+    DATABASE_TYPE: DatabaseType
+    DATABASE_HOST: str
+    DATABASE_NAME: str
+    DATABASE_USER: str
+    DATABASE_PASSWORD: str
+    DB_DRIVER: Optional[str] = None
     SQL_DATABASE_URL: Optional[str] = None  # Build field
     SQL_DATABASE_CONFIG: Optional[dict] = None
 
@@ -97,12 +96,12 @@ class Settings(BaseSettings):
         if not data.get("CELERY_USE_DB"):
             return v  # Use provided value or None
 
-        db_type = data.get("DB_TYPE")
-        db_user = data.get("DB_USER")
-        db_pwd = data.get("DB_PWD")
-        db_server = data.get("DB_SERVER")
-        db_port = data.get("DB_PORT")
-        db_name = data.get("DB_NAME")
+        db_type = data.get("DATABASE_TYPE")
+        db_user = data.get("DATABASE_USER")
+        db_pwd = data.get("DATABASE_PASSWORD")
+        db_server = data.get("DATABASE_HOST")
+        db_port = data.get("DATABASE_PASSWORD")
+        db_name = data.get("DATABASE_NAME")
         db_driver = data.get("DB_DRIVER", "ODBC Driver 18 for SQL Server")
 
         if not all([db_type, db_user, db_pwd, db_server, db_port, db_name]):
@@ -121,7 +120,7 @@ class Settings(BaseSettings):
         elif db_type == "mysql":
             db_url = f"db+sqlalchemy://mysql+pymysql://{db_user}:{pwd_encoded}@{db_server}:{db_port}/{db_name}"  # pylint: disable=line-too-long
         else:
-            raise ValueError(f"Unsupported DB_TYPE: {db_type}")
+            raise ValueError(f"Unsupported DATABASE_TYPE: {db_type}")
 
         return db_url
 
@@ -132,12 +131,12 @@ class Settings(BaseSettings):
         Build database url based on db_type
         """
         data = values.data
-        db_type = data.get("DB_TYPE")
-        db_user = data.get("DB_USER")
-        db_pwd = data.get("DB_PWD")
-        db_server = data.get("DB_SERVER")
-        db_port = data.get("DB_PORT")
-        db_name = data.get("DB_NAME")
+        db_type = data.get("DATABASE_TYPE")
+        db_user = data.get("DATABASE_USER")
+        db_pwd = data.get("DATABASE_PASSWORD")
+        db_server = data.get("DATABASE_HOST")
+        db_port = data.get("DATABASE_PASSWORD")
+        db_name = data.get("DATABASE_NAME")
         driver = data.get("DB_DRIVER")
 
         if not all([db_type, db_user, db_pwd, db_server, db_port, db_name]):
@@ -156,7 +155,7 @@ class Settings(BaseSettings):
                 f"mysql+pymysql://{db_user}:{db_pwd}@{db_server}:{db_port}/{db_name}"
             )
         else:
-            raise ValueError(f"Unsupported DB_TYPE: {db_type}")
+            raise ValueError(f"Unsupported DATABASE_TYPE: {db_type}")
 
         return db_url
 
@@ -168,11 +167,11 @@ class Settings(BaseSettings):
         """
         data = values.data
 
-        db_user = data.get("DB_USER")
-        db_pwd = data.get("DB_PWD")
-        db_server = data.get("DB_SERVER")
-        db_port = data.get("DB_PORT")
-        db_name = data.get("DB_NAME")
+        db_user = data.get("DATABASE_USER")
+        db_pwd = data.get("DATABASE_PASSWORD")
+        db_server = data.get("DATABASE_HOST")
+        db_port = data.get("DATABASE_PASSWORD")
+        db_name = data.get("DATABASE_NAME")
         driver = data.get("DB_DRIVER", 'Not set')
 
         pwd_encoded = quote_plus(db_pwd)

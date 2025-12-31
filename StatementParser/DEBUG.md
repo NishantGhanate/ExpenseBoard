@@ -20,3 +20,8 @@ $ 192.168.153.156
 └─────────────────────────────────────────────────────────┘
 
 for pg admin also the above ip instead of docker container name
+
+
+
+# windows & linux
+> sed -i 's/\r$//' .env

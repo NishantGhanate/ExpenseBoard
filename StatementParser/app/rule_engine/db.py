@@ -25,6 +25,7 @@ SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS ss_categorization_rules (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES ss_users(id) ON DELETE CASCADE,
     dsl_text TEXT NOT NULL,  -- Store the DSL rule text
     priority INTEGER DEFAULT 100,
     is_active BOOLEAN DEFAULT TRUE,

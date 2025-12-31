@@ -11,6 +11,7 @@ from typing import List, Optional
 from urllib.parse import quote_plus
 
 from pydantic import field_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -44,12 +45,12 @@ class Settings(BaseSettings):
     It loads attributes in given order
     """
 
-    model_config = SettingsConfigDict(
-        env_file=BASE_DIR / ".env",  # Explicit path
-        env_file_encoding="utf-8",
-        extra="ignore",
-        case_sensitive=True
-    )
+    # model_config = SettingsConfigDict(
+    #     env_file=BASE_DIR / ".env",  # Explicit path
+    #     env_file_encoding="utf-8",
+    #     extra="ignore",
+    #     case_sensitive=True
+    # )
 
     NAME: str = "StatementParser"
     ENVIRONMENT: Environment
@@ -59,6 +60,7 @@ class Settings(BaseSettings):
     # DB config
     DATABASE_TYPE: DatabaseType
     DATABASE_HOST: str
+    DATABASE_PORT: int
     DATABASE_NAME: str
     DATABASE_USER: str
     DATABASE_PASSWORD: str
@@ -124,40 +126,52 @@ class Settings(BaseSettings):
 
         return db_url
 
-    @field_validator("SQL_DATABASE_URL", mode="before")
-    @classmethod
-    def build_sql_database_url(cls, _, values):
-        """
-        Build database url based on db_type
-        """
-        data = values.data
-        db_type = data.get("DATABASE_TYPE")
-        db_user = data.get("DATABASE_USER")
-        db_pwd = data.get("DATABASE_PASSWORD")
-        db_server = data.get("DATABASE_HOST")
-        db_port = data.get("DATABASE_PASSWORD")
-        db_name = data.get("DATABASE_NAME")
-        driver = data.get("DB_DRIVER")
+    @model_validator(mode="after")
+    def build_urls(self):
+        # Build SQL_DATABASE_URL
+        db_type = self.DATABASE_TYPE
+        db_user = self.DATABASE_USER
+        db_pwd = self.DATABASE_PASSWORD
+        db_server = self.DATABASE_HOST
+        db_port = self.DATABASE_PORT
+        db_name = self.DATABASE_NAME
+        driver = self.DB_DRIVER
 
-        if not all([db_type, db_user, db_pwd, db_server, db_port, db_name]):
-            raise ValueError("Missing required DB configuration")
+        pwd_encoded = quote_plus(db_pwd)
 
-        db_url = ""
-        if db_type == "mssql":
-            db_url = (
-                f"mssql+pyodbc://{db_user}:%s@{db_server},{db_port}/{db_name}?TrustServerCertificate=yes&driver={driver}"
-                % quote_plus(db_pwd)
+        if db_type == DatabaseType.MSSQL:
+            self.SQL_DATABASE_URL = (
+                f"mssql+pyodbc://{db_user}:{pwd_encoded}@{db_server},{db_port}/{db_name}"
+                f"?TrustServerCertificate=yes&driver={quote_plus(driver or 'ODBC Driver 18 for SQL Server')}"
             )
-        elif db_type == "postgres":
-            db_url = f"postgresql://{db_user}:{db_pwd}@{db_server}:{db_port}/{db_name}"
-        elif db_type == "mysql":
-            db_url = (
-                f"mysql+pymysql://{db_user}:{db_pwd}@{db_server}:{db_port}/{db_name}"
-            )
+        elif db_type == DatabaseType.POSTGRES:
+            self.SQL_DATABASE_URL = f"postgresql://{db_user}:{pwd_encoded}@{db_server}:{db_port}/{db_name}"
+        elif db_type == DatabaseType.MYSQL:
+            self.SQL_DATABASE_URL = f"mysql+pymysql://{db_user}:{pwd_encoded}@{db_server}:{db_port}/{db_name}"
         else:
             raise ValueError(f"Unsupported DATABASE_TYPE: {db_type}")
 
-        return db_url
+        # Build SQL_DATABASE_CONFIG
+        self.SQL_DATABASE_CONFIG = {
+            "server": db_server,
+            "database": db_name,
+            "username": db_user,
+            "password": pwd_encoded,
+        }
+
+        # Build CELERY_BACKEND_URL if using DB
+        if self.CELERY_USE_DB:
+            if db_type == DatabaseType.MSSQL:
+                self.CELERY_BACKEND_URL = (
+                    f"db+mssql+pyodbc://{db_user}:{pwd_encoded}@{db_server}:{db_port}/{db_name}"
+                    f"?TrustServerCertificate=yes&driver={quote_plus(driver or 'ODBC Driver 18 for SQL Server')}"
+                )
+            elif db_type == DatabaseType.POSTGRES:
+                self.CELERY_BACKEND_URL = f"db+postgresql://{db_user}:{pwd_encoded}@{db_server}:{db_port}/{db_name}"
+            elif db_type == DatabaseType.MYSQL:
+                self.CELERY_BACKEND_URL = f"db+mysql+pymysql://{db_user}:{pwd_encoded}@{db_server}:{db_port}/{db_name}"
+
+        return self
 
     @field_validator("SQL_DATABASE_CONFIG", mode="before")
     @classmethod

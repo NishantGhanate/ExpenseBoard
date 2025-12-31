@@ -8,12 +8,15 @@ Docstring for app.tasks.bank_statment_upload
 
 """
 
-
+import logging
 from app.pdf_normalizer.parser import parse_statement
 from app.pdf_normalizer.utils import get_bank_from_email
+from app.core.database import fetch_one, fetch_all
+from app.rule_engine.parser import parse, parse_rules
+from app.rule_engine.evaluator import TransactionCategorizer, RuleEvaluator
 from celery import shared_task
 
-
+logger = logging.getLogger("app")
 
 @shared_task(
     bind=True,
@@ -27,9 +30,40 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
 
 
     """
-    bank_name = get_bank_from_email(email= from_email)
+    # bank_name = get_bank_from_email(email= from_email)
+    # result = parse_statement(pdf_path=file_path, bank_name= bank_name)
 
-    result = parse_statement(pdf_path=file_path, bank_name= bank_name)
+    # call db and get user_id based on to_email from ss_users table
+    user_obj = fetch_one(
+        query="SELECT id FROM ss_users WHERE email = %s and is_active=true", params=(to_email,)
+    )
+    print(user_obj)
+
+    # get rules from ss_categorization_rules for given user
+    dsl_rules = fetch_all(
+        "SELECT id, dsl_text FROM ss_categorization_rules WHERE user_id = %s and is_active=true",
+        (user_obj['id'],)
+    )
+    print(dsl_rules)
+
+    rules = []
+    for data in dsl_rules:
+        try:
+            rules.append(parse(data['dsl_text']))
+        except Exception:
+            logger.exception(f"Failed to parse rule = {data}")
+
+    # Load the rules
+    categorizer = TransactionCategorizer(rules)
+    print(categorizer)
+
+    matching = categorizer.find_matching_rules(result['transactions'])
+    for rule in matching:
+        logger.debug(f"  - {rule.name} (priority: {rule.priority})")
+
+
+    result = categorizer.categorize(result['transactions'])
+
     return result
 
 

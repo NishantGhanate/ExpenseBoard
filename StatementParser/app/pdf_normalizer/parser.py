@@ -27,7 +27,7 @@ def parse_statement(pdf_path: str, bank_name: BankName = None):
                 ''
 
             },
-            'transcation_details' : [
+            'transactions' : [
 
             ]
         }
@@ -45,10 +45,10 @@ def parse_statement(pdf_path: str, bank_name: BankName = None):
     # rows = debug_tables(pdf_path)
     rows = extract_table_rows(pdf_path)
     account_details = parser.parse_account_details(text= text)
-    transcation_rows = parser.parse_rows(rows)
+    transactions = parser.parse_rows(rows)
     details = {
         'account_details' : account_details,
-        'transcations' : transcation_rows
+        'transactions' : transactions
     }
     return details
 

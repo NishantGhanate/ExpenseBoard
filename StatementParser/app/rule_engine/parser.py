@@ -245,7 +245,7 @@ class Parser:
             return NotNullOperator()
 
         else:
-            raise ParseError(f"Unknown operator '{current.value}'", current.position)
+            raise ParseError(f"Unknown operator {current.type} - '{current.value}'", current.position)
 
     def _parse_case_flag(self) -> bool:
         """Parse optional :i flag for case-insensitive."""

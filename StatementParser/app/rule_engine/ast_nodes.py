@@ -180,6 +180,7 @@ class Assignment:
     tag_id: int | None = None
     type_id: int | None = None
     payment_method_id: int | None = None
+    goal_id:  int | None = None
 
 
 # =============================================================================

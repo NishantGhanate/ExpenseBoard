@@ -15,9 +15,6 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
-      CACHE_DEFAULT_TIMEOUT: ${CACHE_DEFAULT_TIMEOUT:-300}
-      RESULTS_CACHE_TIMEOUT: ${RESULTS_CACHE_TIMEOUT:-86400}
-      SQLLAB_ASYNC_TIME_LIMIT_SEC: ${SQLLAB_ASYNC_TIME_LIMIT_SEC:-0}
     volumes:
       - ./superset_home:/app/superset_home
       - ./superset_config.py:/app/pythonpath/superset_config.py
@@ -53,13 +50,17 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - superset_redisdata:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
     networks:
       - internal
+      - shared_network
 
-  celery-worker:
+  # Superset Celery Worker
+  superset-celery-worker:
     image: ${SUPERSET_IMAGE:-superset-custom}
     container_name: superset_celery
-    command: celery --app=superset.tasks.celery_app:app worker --loglevel=${CELERY_LOG_LEVEL:-INFO}
+    command: celery --app=superset.tasks.celery_app:app worker --loglevel=${CELERY_LOG_LEVEL:-INFO} -Q superset
     environment:
       SUPERSET_ENV: ${SUPERSET_ENV:-production}
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
@@ -78,6 +79,64 @@ services:
       - postgres
     networks:
       - internal
+      - shared_network
+
+  # Statement Parser API
+  api:
+    build: ./StatementParser
+    container_name: statement_parser_api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql://${DATABASE_USER:-superset}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_DB:-superset}
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - ./StatementParser/files:/app/files
+    depends_on:
+      - redis
+      - postgres
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - internal
+      - shared_network
+
+  # Statement Parser Celery Worker
+  statement-parser-worker:
+    build: ./StatementParser
+    container_name: statement_parser_worker
+    environment:
+      DATABASE_URL: postgresql://${DATABASE_USER:-superset}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_DB:-superset}
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - ./StatementParser/files:/app/files
+    depends_on:
+      - redis
+      - postgres
+    command: celery -A app.celery_app worker --loglevel=info -Q statement_parser
+    networks:
+      - internal
+      - shared_network
+
+  # Statement Parser Celery Beat
+  statement-parser-beat:
+    build: ./StatementParser
+    container_name: statement_parser_beat
+    environment:
+      DATABASE_URL: postgresql://${DATABASE_USER:-superset}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_DB:-superset}
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      - redis
+      - postgres
+    command: celery -A app.celery_app beat --loglevel=info
+    networks:
+      - internal
+      - shared_network
 
 volumes:
   superset_pgdata:

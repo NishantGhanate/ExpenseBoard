@@ -30,21 +30,21 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
 
 
     """
-    # bank_name = get_bank_from_email(email= from_email)
-    # result = parse_statement(pdf_path=file_path, bank_name= bank_name)
+    bank_name = get_bank_from_email(email= from_email)
+    result = parse_statement(pdf_path=file_path, bank_name= bank_name)
 
     # call db and get user_id based on to_email from ss_users table
     user_obj = fetch_one(
         query="SELECT id FROM ss_users WHERE email = %s and is_active=true", params=(to_email,)
     )
-    print(user_obj)
+    logger.debug(user_obj)
 
     # get rules from ss_categorization_rules for given user
     dsl_rules = fetch_all(
         "SELECT id, dsl_text FROM ss_categorization_rules WHERE user_id = %s and is_active=true",
         (user_obj['id'],)
     )
-    print(dsl_rules)
+    logger.debug(f"Total {len(dsl_rules)} rules fetched for {from_email}")
 
     rules = []
     for data in dsl_rules:
@@ -55,16 +55,16 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
 
     # Load the rules
     categorizer = TransactionCategorizer(rules)
-    print(categorizer)
 
-    matching = categorizer.find_matching_rules(result['transactions'])
-    for rule in matching:
-        logger.debug(f"  - {rule.name} (priority: {rule.priority})")
+    for transaction in result['transactions']:
+        matching = categorizer.find_matching_rules(transaction)
+        for rule in matching:
+            logger.debug(f"  - {rule.name} (priority: {rule.priority})")
 
 
-    result = categorizer.categorize(result['transactions'])
-
-    return result
+    applied_rule = categorizer.categorize_batch(result['transactions'])
+    logger.debug(f'after applying rules: {applied_rule}')
+    return applied_rule
 
 
 if __name__ == "__main__":

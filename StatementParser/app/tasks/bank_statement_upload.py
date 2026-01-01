@@ -9,11 +9,12 @@ Docstring for app.tasks.bank_statment_upload
 """
 
 import logging
+
+from app.core.database import fetch_all, fetch_one
 from app.pdf_normalizer.parser import parse_statement
 from app.pdf_normalizer.utils import get_bank_from_email
-from app.core.database import fetch_one, fetch_all
+from app.rule_engine.evaluator import RuleEvaluator, TransactionCategorizer
 from app.rule_engine.parser import parse, parse_rules
-from app.rule_engine.evaluator import TransactionCategorizer, RuleEvaluator
 from celery import shared_task
 
 logger = logging.getLogger("app")
@@ -27,8 +28,6 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
     """
     This function binds logics togther.
     Gets bank name,
-
-
     """
     bank_name = get_bank_from_email(email= from_email)
     result = parse_statement(pdf_path=file_path, bank_name= bank_name)
@@ -62,9 +61,15 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
             logger.debug(f"  - {rule.name} (priority: {rule.priority})")
 
 
-    applied_rule = categorizer.categorize_batch(result['transactions'])
-    logger.debug(f'after applying rules: {applied_rule}')
-    return applied_rule
+    applied_rule_tx = categorizer.categorize_batch(result['transactions'])
+    logger.debug(f'Total TX {len(applied_rule_tx)} after applying rules: {applied_rule_tx}')
+
+    # Assign user id in txn
+    for data in applied_rule_tx:
+        data['user_id'] = user_obj['id']
+
+    result['transactions'] = applied_rule_tx
+    return result
 
 
 if __name__ == "__main__":
@@ -75,4 +80,4 @@ if __name__ == "__main__":
     parser.add_argument("--to_email", required=True, help="email reciever")
     args = parser.parse_args()
     result = process_bank_pdf(file_path=args.input, from_email=args.from_email, to_email=args.to_email)
-    print(result)
+

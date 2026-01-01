@@ -92,13 +92,13 @@ def extract_entity_name(details: str) -> str | None:
 
     return None
 
-def normalize_transaction(row: dict, person_id: int = 1) -> dict:
+def normalize_transaction(row: dict, user_id: int = 1) -> dict:
     """
     Normalize PDF extracted row to ss_transactions schema
 
     Args:
         row: Dict from PDF extraction
-        person_id: ID of the person (from ss_persons table)
+        user_id: ID of the person (from ss_persons table)
 
     Returns:
         Dict matching ss_transactions columns
@@ -113,7 +113,7 @@ def normalize_transaction(row: dict, person_id: int = 1) -> dict:
     return {
         'entity_name': extract_entity_name(details),
         'transaction_date': parse_date(row['date']),
-        'person_id': person_id,
+        'user_id': user_id,
         'type_id': None,  # Lookup from ss_transaction_types based on tx_type
         'category_id': None,  # Needs categorization logic
         'tag_id': None,
@@ -138,7 +138,7 @@ if __name__ == "__main__":
         'balance': '73,179.26'
     }
 
-    normalized = normalize_transaction(sample, person_id=1)
+    normalized = normalize_transaction(sample, user_id=1)
 
     for k, v in normalized.items():
         print(f"{k}: {v}")

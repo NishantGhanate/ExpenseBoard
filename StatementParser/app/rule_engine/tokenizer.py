@@ -10,8 +10,8 @@ Tokens:
 
 import re
 from dataclasses import dataclass
-from typing import List
 from enum import Enum
+from typing import List
 
 
 class TokenType(Enum):
@@ -46,6 +46,7 @@ class TokenType(Enum):
     TAG_ID = "TAG_ID"
     TYPE_ID = "TYPE_ID"
     PAYMENT_METHOD_ID = "PAYMENT_METHOD_ID"
+    GOAL_ID = "GOAL_ID"
 
     # Literals & identifiers
     STRING = "STRING"
@@ -110,6 +111,7 @@ class Tokenizer:
         (TokenType.TAG_ID, r'(?i)\btag_id\b'),
         (TokenType.TYPE_ID, r'(?i)\btype_id\b'),
         (TokenType.PAYMENT_METHOD_ID, r'(?i)\bpayment_method_id\b'),
+        (TokenType.GOAL_ID, r'(?i)\bgoal_id\b'),
 
         # Literals
         (TokenType.STRING, r'"([^"]*)"'),

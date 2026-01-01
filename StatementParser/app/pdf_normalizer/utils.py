@@ -1,8 +1,9 @@
-import pdfplumber
 import re
-from decimal import Decimal
 from datetime import datetime
-from typing import List, Dict, Optional
+from decimal import Decimal
+from typing import Dict, List, Optional
+
+import pdfplumber
 from app.common.enums import BANK_EMAIL_PATTERNS, BankName
 
 
@@ -250,7 +251,7 @@ def account_details_dict():
         'type' : None
     }
 
-def transcation_dict():
+def transaction_template(**kawrgs):
     """
     Docstring for transform_dict
 
@@ -259,7 +260,8 @@ def transcation_dict():
     return {
         'entity_name': '',
         'transaction_date': '',
-        'person_id': '',
+        'user_id': '',
+        'bank_id': None,
         'type': '',
         'type_id': None,  # Lookup from ss_transaction_types based on tx_type
         'category_id': None,  # Needs categorization logic
@@ -267,10 +269,10 @@ def transcation_dict():
         'payment_method_id': None,  # Could infer from UPI/NEFT/IMPS prefix
         'payment_method': '',
         'amount': '',
-        'currency': 'INR',
+        'currency': kawrgs.get('currency', 'INR'),
         'goal_id': None,
         'description': '',
-        'reference_id': '',
+        'reference_id': None,
         'account_id': None
     }
 

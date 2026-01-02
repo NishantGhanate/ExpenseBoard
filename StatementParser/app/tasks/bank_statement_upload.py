@@ -11,10 +11,12 @@ Docstring for app.tasks.bank_statment_upload
 import logging
 
 from app.core.database import fetch_all, fetch_one
+from app.model_actions.bank_account import get_or_create_bank_account
+from app.model_actions.transactions import bulk_insert_transactions
 from app.pdf_normalizer.parser import parse_statement
 from app.pdf_normalizer.utils import get_bank_from_email
-from app.rule_engine.evaluator import RuleEvaluator, TransactionCategorizer
-from app.rule_engine.parser import parse, parse_rules
+from app.rule_engine.evaluator import TransactionCategorizer
+from app.rule_engine.parser import parse
 from celery import shared_task
 
 logger = logging.getLogger("app")
@@ -55,18 +57,33 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
     # Load the rules
     categorizer = TransactionCategorizer(rules)
 
-    for transaction in result['transactions']:
-        matching = categorizer.find_matching_rules(transaction)
-        for rule in matching:
-            logger.debug(f"  - {rule.name} (priority: {rule.priority})")
+    # for transaction in result['transactions']:
+    #     matching = categorizer.find_matching_rules(transaction)
+    #     for rule in matching:
+    #         logger.debug(f"  - {rule.name} (priority: {rule.priority})")
 
 
     applied_rule_tx = categorizer.categorize_batch(result['transactions'])
-    logger.debug(f'Total TX {len(applied_rule_tx)} after applying rules: {applied_rule_tx}')
+    # logger.debug(f'Total TX {len(applied_rule_tx)} after applying rules: {applied_rule_tx}')
+
+    account_details, is_success = get_or_create_bank_account(
+        user_id= user_obj['id'],
+        number=result['account_details'].get('number'),
+        ifsc_code=result['account_details'].get('ifsc_code'),
+        account_type=result['account_details'].get('type')
+    )
+    if not is_success:
+        raise Exception('Could find account details to link transcations')
+
 
     # Assign user id in txn
     for data in applied_rule_tx:
         data['user_id'] = user_obj['id']
+        data['bank_account_id'] = account_details['id']
+
+
+    stats = bulk_insert_transactions(transactions=applied_rule_tx)
+    logger.info(f"Bulk insert stats = {stats}")
 
     result['transactions'] = applied_rule_tx
     return result

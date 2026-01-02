@@ -7,11 +7,11 @@ Docstring :
 > python app/pdf_normalizer/parser.py files/15547619-XXXXXXX-400008_unlocked.pdf
 > python app/pdf_normalizer/parser.py files/hdfc.pdf
 """
-from app.pdf_normalizer.banks import UnionBankParser, HdfcBankParser
-from app.pdf_normalizer.utils import get_bank_identifier, extract_table_rows, debug_tables
-from app.pdf_normalizer.layout_detector import BankDetector
 from app.common.enums import BankName
-
+from app.pdf_normalizer.banks import HdfcBankParser, UnionBankParser
+from app.pdf_normalizer.layout_detector import BankDetector
+from app.pdf_normalizer.utils import (debug_tables, extract_table_rows,
+                                      get_bank_identifier)
 
 BANK_PARSER_MAP = {
     BankName.UNION : UnionBankParser
@@ -21,7 +21,7 @@ def parse_statement(pdf_path: str, bank_name: BankName = None):
     """
     Docstring for parse_statement
 
-    Returns:
+    - Returns:
         - {
             "account_details: {
                 ''

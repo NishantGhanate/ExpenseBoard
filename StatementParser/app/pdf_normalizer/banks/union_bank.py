@@ -2,7 +2,8 @@ import re
 
 from app.pdf_normalizer.parsers.base_parser import BankStatementParser
 from app.pdf_normalizer.parsers.base_parsing_rules import DateAmountRule
-from app.pdf_normalizer.utils import account_details_dict, transaction_template
+from app.pdf_normalizer.utils import (account_details_dict,
+                                      ss_transactions_template)
 from app.pdf_normalizer.values_extract import (determine_transaction_type,
                                                extract_entity_name,
                                                extract_payment_method,
@@ -89,7 +90,7 @@ class UnionBankParser(BankStatementParser):
             for rule in self.rules:
                 is_match, index = rule.match(row)
                 if is_match:
-                    template = transaction_template()
+                    template = ss_transactions_template()
 
                     template['transaction_date'] = parse_date(row[index])
                     template['reference_id'] = row[1]

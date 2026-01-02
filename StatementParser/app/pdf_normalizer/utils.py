@@ -251,7 +251,7 @@ def account_details_dict():
         'type' : None
     }
 
-def transaction_template(**kawrgs):
+def ss_transactions_template(**kawrgs):
     """
     Docstring for transform_dict
 
@@ -261,7 +261,7 @@ def transaction_template(**kawrgs):
         'entity_name': '',
         'transaction_date': '',
         'user_id': '',
-        'bank_id': None,
+        'bank_account_id': None,
         'type': '',
         'type_id': None,  # Lookup from ss_transaction_types based on tx_type
         'category_id': None,  # Needs categorization logic
@@ -273,7 +273,6 @@ def transaction_template(**kawrgs):
         'goal_id': None,
         'description': '',
         'reference_id': None,
-        'account_id': None
     }
 
 

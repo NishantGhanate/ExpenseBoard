@@ -7,7 +7,7 @@ BEGIN;
 -- 1.  USERS (2 users)
 -- ============================================
 INSERT INTO ss_users (name, email, relationship, color, is_active) VALUES
-('Nishant', 'nishant7.ng@example.com', 'self', '#3B82F6', TRUE),
+('Nishant', 'nishant7.ng@gmail.com', 'self', '#3B82F6', TRUE),
 ('Rinisha', 'rburriwar196@gmail.com', 'self', '#3B82F6', TRUE);
 
 -- ============================================

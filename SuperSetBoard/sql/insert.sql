@@ -8,7 +8,7 @@ BEGIN;
 -- ============================================
 INSERT INTO ss_users (name, email, relationship, color, is_active) VALUES
 ('Nishant', 'nishant7.ng@example.com', 'self', '#3B82F6', TRUE),
-('Rinisha', 'rburriwar196@gmail.com', 'self', '#3B82F6', TRUE),
+('Rinisha', 'rburriwar196@gmail.com', 'self', '#3B82F6', TRUE);
 
 -- ============================================
 -- 2. TAGS (SUB BIN)
@@ -90,10 +90,10 @@ INSERT INTO ss_group_members (group_id, user_id, role) VALUES
 -- 8. GOALS
 -- ============================================
 INSERT INTO ss_goals (name, target_amount, start_date, target_date, status, remarks, color, user_id, group_id) VALUES
-('SIP Fund', 10000000.00, '2026-01-01', '2036-01-01', 'ACTIVE', 'Core', '#F59E0B', 1, NULL);
+('SIP Fund', 10000000.00, '2026-01-01', '2036-01-01', 'ACTIVE', 'Core', '#F59E0B', 1, NULL),
 ('Emergency Fund', 1000000.00, '2024-01-01', '2027-12-30', 'ACTIVE', '6 months expenses', '#22C55E', 1, NULL),
 ('House Down Payment', 2000000.00, '2024-01-01', '2030-12-31', 'ACTIVE', 'For new house', '#3B82F6', NULL, 1),
-('Vacation Fund', 200000.00, '2024-06-01', '2026-30-01', 'ACTIVE', 'Europe trip', '#F59E0B', 2, NULL),
+('Vacation Fund', 200000.00, '2024-06-01', '2026-30-01', 'ACTIVE', 'Europe trip', '#F59E0B', 2, NULL);
 
 
 

@@ -1,8 +1,3 @@
-I don't have access to `D:\Github\ExpenseBoard`. I can only access `D:\ActivePrime\Repo`.
-
-However, based on our conversation about the expense tracking system, I can create a README for you:
-
-```markdown
 # ExpenseBoard
 
 A personal finance management system with bank statement parsing, expense categorization, and analytics powered by Apache Superset.
@@ -261,5 +256,5 @@ MIT License
 - [pdfplumber](https://github.com/jsvine/pdfplumber) - PDF parsing
 - [Apache Superset](https://superset.apache.org/) - Analytics
 - [FastAPI](https://fastapi.tiangolo.com/) - API framework
-```
+
 

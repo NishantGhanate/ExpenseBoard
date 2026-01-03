@@ -8,13 +8,14 @@ Docstring :
 > python app/pdf_normalizer/parser.py files/hdfc.pdf
 """
 from app.common.enums import BankName
-from app.pdf_normalizer.banks import HdfcBankParser, UnionBankParser
+from app.pdf_normalizer.banks import HdfcBankParser, UnionBankParser, SBIBankParser
 from app.pdf_normalizer.layout_detector import BankDetector
 from app.pdf_normalizer.utils import (debug_tables, extract_table_rows,
                                       get_bank_identifier)
 
 BANK_PARSER_MAP = {
-    BankName.UNION : UnionBankParser
+    BankName.UNION : UnionBankParser,
+    BankName.SBI : SBIBankParser,
 }
 
 def parse_statement(pdf_path: str, bank_name: BankName = None):
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    result = parse_statement(pdf_path=args.input, bank_name= BankName.UNION)
-    print(len(result))
-    # print(result)
+    result = parse_statement(pdf_path=args.input)
+    # print(len(result))
+    print(result)
 

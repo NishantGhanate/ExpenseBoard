@@ -12,6 +12,6 @@ class BankDetector:
         for parser_cls in self.parsers:
             parser = parser_cls()
             if parser.detect(text):
-                logger.info(f"Detected: {text}")
+                # logger.info(f"Detected: {text}")
                 return parser_cls
         raise ValueError("Unsupported bank statement")

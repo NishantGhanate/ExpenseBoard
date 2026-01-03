@@ -8,18 +8,17 @@ from app.common.enums import BANK_EMAIL_PATTERNS, BankName
 
 
 def get_bank_identifier(pdf_path: str) -> str:
-    """Read top half of first page to identify bank."""
+    """Read first two pages for bank detection and account details."""
+    texts = []
+    
     with pdfplumber.open(pdf_path) as pdf:
-        page = pdf.pages[0]
+        for page in pdf.pages[:3]:
+            text = page.extract_text()
+            if text:
+                texts.append(text)
 
-        # Get page dimensions
-        height = page.height
+    return "\n".join(texts)
 
-        # Crop to top half: (x0, y0, x1, y1)
-        top_half = page.crop((0, 0, page.width, height / 2))
-
-        text = page.extract_text() or ""
-        return text.lower()
 
 
 def is_date_like(text: str) -> bool:
@@ -182,6 +181,9 @@ def extract_table_rows(pdf_path: str) -> list[list[str]]:
                     all_rows.append(pending_row)
 
     return all_rows
+
+
+
 
 
 def debug_tables(pdf_path: str):

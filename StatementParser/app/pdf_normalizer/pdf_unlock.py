@@ -8,7 +8,6 @@ Docstring for app.pdf_normalizer.pdf_unlock
 > python app/pdf_normalizer/pdf_unlock.py files/union1.pdf -p XXXXXXXX
 """
 
-
 import argparse
 
 import pdfplumber
@@ -16,11 +15,15 @@ import pikepdf
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Unlock and extract text from password-protected PDFs")
+    parser = argparse.ArgumentParser(
+        description="Unlock and extract text from password-protected PDFs"
+    )
     parser.add_argument("input", help="Input PDF file path")
     parser.add_argument("-p", "--password", required=True, help="PDF password")
     parser.add_argument("-o", "--output", help="Output unlocked PDF path (optional)")
-    parser.add_argument("-t", "--text", action="store_true", help="Extract and print text")
+    parser.add_argument(
+        "-t", "--text", action="store_true", help="Extract and print text"
+    )
 
     args = parser.parse_args()
 

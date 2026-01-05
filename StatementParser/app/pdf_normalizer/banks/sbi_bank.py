@@ -1,12 +1,9 @@
-import re
 import copy
+import re
 
 from app.pdf_normalizer.parsers.base_parser import BankStatementParser
 from app.pdf_normalizer.parsers.base_parsing_rules import DateAmountRule
-from app.pdf_normalizer.utils import (
-    account_details_dict,
-    ss_transactions_template,
-)
+from app.pdf_normalizer.utils import account_details_dict, ss_transactions_template
 from app.pdf_normalizer.values_extract import (
     determine_transaction_type,
     extract_payment_method,
@@ -37,7 +34,7 @@ class SBIBankParser(BankStatementParser):
         # Account number (label-based)
         acc_match = re.search(
             r"(ACCOUNT\s+NUMBER|ACCOUNT\s+NO\.?|A/C\s+NO\.?)\s*[:\-]?\s*([X\d][X\d\s\-]{5,20})",
-            text_u
+            text_u,
         )
         if acc_match:
             result["number"] = acc_match.group(2).replace(" ", "").replace("-", "")
@@ -145,7 +142,9 @@ class SBIBankParser(BankStatementParser):
                 amount_source = credit if credit and credit != "-" else debit
                 template["amount"] = parse_amount(amount_source)
 
-                type_source = f"Cr {credit}" if credit and credit != "-" else f"Dr {debit}"
+                type_source = (
+                    f"Cr {credit}" if credit and credit != "-" else f"Dr {debit}"
+                )
                 template["type"] = determine_transaction_type(type_source)
 
                 # SBI-specific cleanup

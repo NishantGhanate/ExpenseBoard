@@ -1,13 +1,13 @@
+import re
 from abc import ABC, abstractmethod
 from typing import Dict, List
-import re
+
 from dateutil.parser import parse as parse_date
+
 
 class ParsingRule(ABC):
     @abstractmethod
-    def match(self, row: List[str]) -> bool:
-        ...
-
+    def match(self, row: List[str]) -> bool: ...
 
 
 class DateAmountRule(ParsingRule):
@@ -21,7 +21,23 @@ class DateAmountRule(ParsingRule):
         text = text.strip()
 
         # Must contain at least one separator or month name
-        if not any(c in text for c in "/-") and not any(m in text.lower() for m in ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]):
+        if not any(c in text for c in "/-") and not any(
+            m in text.lower()
+            for m in [
+                "jan",
+                "feb",
+                "mar",
+                "apr",
+                "may",
+                "jun",
+                "jul",
+                "aug",
+                "sep",
+                "oct",
+                "nov",
+                "dec",
+            ]
+        ):
             return False
 
         try:
@@ -36,5 +52,3 @@ class DateAmountRule(ParsingRule):
             if row[i] and len(row[i].strip()) >= 6 and self.is_date(row[i]):
                 return True, i
         return False, None
-
-

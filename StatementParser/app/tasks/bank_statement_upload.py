@@ -5,8 +5,8 @@ Docstring for app.tasks.bank_statment_upload
 > source .env
 
 > python app/tasks/bank_statement_upload.py --input files/union1_unlocked.pdf  --from_email noreplyunionbankofindia@unionbankofindia.bank.in --to_email nishant7.ng@gmail.com
-
 """
+
 import logging
 
 from celery import shared_task
@@ -29,43 +29,19 @@ logger = logging.getLogger("app")
 )
 def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
     """
-    Parse bank statement PDF, apply rules, and insert transactions.
+    This function binds logics togther.
+    Gets bank name,
     """
 
-    # -------------------------------------------------
-    # Step 1: Detect bank & parse PDF
-    # -------------------------------------------------
     bank_name = get_bank_from_email(email=from_email)
     result = parse_statement(pdf_path=file_path, bank_name=bank_name)
 
-    # -------------------------------------------------
-    # Step 2: Fetch user
-    # -------------------------------------------------
     user_obj = fetch_one(
-        query="SELECT id FROM ss_users WHERE email = %s AND is_active = true",
+        query="SELECT id FROM ss_users WHERE email = %s and is_active=true",
         params=(to_email,),
     )
     logger.debug(user_obj)
 
-    # -------------------------------------------------
-    # Step 3: Fetch active rules (no bank filter yet)
-    # -------------------------------------------------
-    dsl_rules = fetch_all(
-        "SELECT id, dsl_text FROM ss_categorization_rules WHERE user_id = %s and is_active=true",
-        (user_obj["id"],)
-    )
-    logger.debug("Total %s rules fetched for user", len(dsl_rules))
-
-    rules = []
-    for data in dsl_rules:
-        try:
-            rules.append(parse(data["dsl_text"]))
-        except Exception:
-            logger.exception("Failed to parse rule = %s", data)
-
-    # -------------------------------------------------
-    # Step 4: Create / get bank account
-    # -------------------------------------------------
     account_details, is_success = get_or_create_bank_account(
         user_id=user_obj["id"],
         number=result["account_details"].get("number"),
@@ -74,43 +50,38 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
     )
 
     if not is_success:
-        raise Exception("Could not find account details to link transactions")
+        raise Exception("Could find account details to link transcations")
 
-    bank_account_id = account_details["id"]
+    # 🔹 CLEAN BANK-AWARE RULE FETCH (NO ZIP, NO FILTERING LOGIC)
+    dsl_rules = fetch_all(
+        """
+        SELECT id, dsl_text
+        FROM ss_categorization_rules
+        WHERE user_id = %s
+          AND is_active = true
+          AND (bank_id IS NULL OR bank_id = %s)
+        """,
+        (user_obj["id"], account_details["id"]),
+    )
+    logger.debug(f"Total {len(dsl_rules)} rules fetched for {from_email}")
 
-    # -------------------------------------------------
-    # Step 5: Apply bank-specific rule filtering (in-memory)
-    # -------------------------------------------------
-    filtered_rules = []
-    for rule_row, rule_obj in zip(dsl_rules, rules):
-        if rule_row.get("bank_id") in (None, bank_account_id):
-            filtered_rules.append(rule_obj)
+    rules = []
+    for data in dsl_rules:
+        try:
+            rules.append(parse(data["dsl_text"]))
+        except Exception:
+            logger.exception(f"Failed to parse rule = {data}")
 
-    categorizer = TransactionCategorizer(filtered_rules)
+    categorizer = TransactionCategorizer(rules)
 
-    # for transaction in result['transactions']:
-    #     matching = categorizer.find_matching_rules(transaction)
-    #     for rule in matching:
-    #         logger.debug(f"  - {rule.name} (priority: {rule.priority})")
-
-    # -------------------------------------------------
-    # Step 6: Apply rules ONLY on parsed PDF transactions
-    # -------------------------------------------------
     applied_rule_tx = categorizer.categorize_batch(result["transactions"])
-    # logger.debug(f'Total TX {len(applied_rule_tx)} after applying rules: {applied_rule_tx}')
 
-    # -------------------------------------------------
-    # Step 7: Attach user & bank account to transactions
-    # -------------------------------------------------
-    for txn in applied_rule_tx:
-        txn["user_id"] = user_obj["id"]
-        txn["bank_account_id"] = bank_account_id
+    for data in applied_rule_tx:
+        data["user_id"] = user_obj["id"]
+        data["bank_account_id"] = account_details["id"]
 
-    # -------------------------------------------------
-    # Step 8: Insert transactions
-    # -------------------------------------------------
     stats = bulk_insert_transactions(transactions=applied_rule_tx)
-    logger.info("Bulk insert stats = %s", stats)
+    logger.info(f"Bulk insert stats = {stats}")
 
     result["transactions"] = applied_rule_tx
     return result
@@ -119,12 +90,14 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Process bank statement PDF")
+    parser = argparse.ArgumentParser(description="Extract text")
     parser.add_argument("--input", required=True, help="Input PDF file path")
-    parser.add_argument("--from_email", required=True, help="Email sender")
-    parser.add_argument("--to_email", required=True, help="Email receiver")
-
+    parser.add_argument("--from_email", required=True, help="email sender")
+    parser.add_argument("--to_email", required=True, help="email reciever")
     args = parser.parse_args()
 
-    output = process_bank_pdf( file_path=args.input,from_email=args.from_email,to_email=args.to_email,)
-    
+    result = process_bank_pdf(
+        file_path=args.input,
+        from_email=args.from_email,
+        to_email=args.to_email,
+    )

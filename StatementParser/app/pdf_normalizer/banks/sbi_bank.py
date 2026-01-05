@@ -1,6 +1,7 @@
 import copy
 import re
 
+
 from app.pdf_normalizer.parsers.base_parser import BankStatementParser
 from app.pdf_normalizer.parsers.base_parsing_rules import DateAmountRule
 from app.pdf_normalizer.utils import account_details_dict, ss_transactions_template
@@ -10,6 +11,7 @@ from app.pdf_normalizer.values_extract import (
     parse_amount,
     parse_date,
 )
+from app.common.enums import AccountType
 
 
 class SBIBankParser(BankStatementParser):
@@ -50,11 +52,17 @@ class SBIBankParser(BankStatementParser):
             result["ifsc_code"] = ifsc_match.group(0)
 
         # Account type
-        if "SAVING ACCOUNT" in text_u:
-            result["type"] = "SAVINGS"
-        elif "CURRENT ACCOUNT" in text_u:
-            result["type"] = "CURRENT"
-
+        type_patterns = [
+                r"ACCOUNT\s*TYPE\s*[:\-]?\s*(SAVINGS?|CURRENT|SALARY|NRE|NRO|FIXED DEPOSIT|FD|RD|RECURRING)",
+                r"(SAVINGS?|CURRENT|SALARY)\s*ACCOUNT",
+            ]
+        for pattern in type_patterns:
+            match = re.search(pattern, text_u)
+            if match:
+                acc_type = match.group(1).upper()
+                result["type"] = (AccountType[acc_type if acc_type.endswith("S") else acc_type + "S"].value)
+                break
+            
         return result
 
     # -------------------------------------------------
@@ -163,3 +171,6 @@ class SBIBankParser(BankStatementParser):
                     unique.append(template)
 
         return unique
+    
+
+                        

@@ -65,5 +65,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     result = parse_statement(pdf_path=args.input)
-    # print(len(result))
+    
+    print(len(result["transactions"]))
+
     print(result)

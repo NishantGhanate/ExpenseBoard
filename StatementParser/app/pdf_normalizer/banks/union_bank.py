@@ -1,5 +1,5 @@
 import re
-
+from app.common.enums import AccountType
 from app.pdf_normalizer.parsers.base_parser import BankStatementParser
 from app.pdf_normalizer.parsers.base_parsing_rules import DateAmountRule
 from app.pdf_normalizer.utils import account_details_dict, ss_transactions_template
@@ -69,12 +69,12 @@ class UnionBankParser(BankStatementParser):
         for pattern in type_patterns:
             match = re.search(pattern, text_upper)
             if match:
-                acc_type = match.group(1).strip()
-                # Normalize
-                if acc_type.startswith("SAVING"):
-                    result["type"] = "SAVINGS"
-                else:
-                    result["type"] = acc_type
+                acc_type = match.group(1).upper()
+                result["type"] = (
+                    AccountType[
+                        acc_type if acc_type.endswith("S") else acc_type + "S"
+                    ].value
+                )
                 break
 
         return result

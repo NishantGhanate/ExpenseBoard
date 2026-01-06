@@ -1,7 +1,6 @@
 import copy
 import re
 
-
 from app.pdf_normalizer.parsers.base_parser import BankStatementParser
 from app.pdf_normalizer.parsers.base_parsing_rules import DateAmountRule
 from app.pdf_normalizer.utils import account_details_dict, ss_transactions_template
@@ -41,7 +40,7 @@ class SBIBankParser(BankStatementParser):
         if acc_match:
             result["number"] = acc_match.group(2).replace(" ", "").replace("-", "")
 
-        # Fallback: masked account number anywhere (take LAST → transaction account)
+        # Fallback: masked account number anywhere (take LAST)
         matches = re.findall(r"\bX{4,}\d{3,6}\b", text)
         if matches:
             result["number"] = matches[-1]
@@ -51,18 +50,20 @@ class SBIBankParser(BankStatementParser):
         if ifsc_match:
             result["ifsc_code"] = ifsc_match.group(0)
 
-        # Account type
+        # Account type (ONLY extraction + enum call)
         type_patterns = [
-                r"ACCOUNT\s*TYPE\s*[:\-]?\s*(SAVINGS?|CURRENT|SALARY|NRE|NRO|FIXED DEPOSIT|FD|RD|RECURRING)",
-                r"(SAVINGS?|CURRENT|SALARY)\s*ACCOUNT",
-            ]
+            r"ACCOUNT\s*TYPE\s*[:\-]?\s*(SAVINGS?|CURRENT|SALARY|NRE|NRO|FIXED DEPOSIT|FD|RD|RECURRING)",
+            r"(SAVINGS?|CURRENT|SALARY)\s*ACCOUNT",
+        ]
+
         for pattern in type_patterns:
             match = re.search(pattern, text_u)
             if match:
-                acc_type = match.group(1).upper()
-                result["type"] = (AccountType[acc_type if acc_type.endswith("S") else acc_type + "S"].value)
+                raw_type = match.group(1)
+                acc_type = AccountType.from_raw(raw_type)
+                result["type"] = acc_type.value if acc_type else None
                 break
-            
+
         return result
 
     # -------------------------------------------------
@@ -158,7 +159,7 @@ class SBIBankParser(BankStatementParser):
                 # SBI-specific cleanup
                 template = self._sbi_post_process(template)
 
-                # Dedup (SAFE: preserves same-day multiple txns)
+                # Dedup
                 key = (
                     template["transaction_date"],
                     template["amount"],
@@ -171,6 +172,3 @@ class SBIBankParser(BankStatementParser):
                     unique.append(template)
 
         return unique
-    
-
-                        

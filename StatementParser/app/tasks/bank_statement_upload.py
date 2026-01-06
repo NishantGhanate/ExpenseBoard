@@ -11,17 +11,16 @@ Docstring for app.tasks.bank_statment_upload
 
 import logging
 
-from celery import shared_task
-
 from app.core.database import fetch_all, fetch_one
 from app.model_actions.bank_account import get_or_create_bank_account
+from app.model_actions.statement_pdf import get_statement_pdf_password
 from app.model_actions.transactions import bulk_insert_transactions
 from app.pdf_normalizer.parser import parse_statement
+from app.pdf_normalizer.pdf_unlock import is_pdf_password_protected, unlock_pdf
 from app.pdf_normalizer.utils import get_bank_from_email
 from app.rule_engine.evaluator import TransactionCategorizer
 from app.rule_engine.parser import parse
-from app.pdf_normalizer.pdf_unlock import is_pdf_password_protected, unlock_pdf
-from app.model_actions.statement_pdf import get_statement_pdf_password
+from celery import shared_task
 
 logger = logging.getLogger("app")
 
@@ -48,7 +47,8 @@ def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_ema
             sender_email=from_email,
             filename=filename
         )
-
+        if not password_dict:
+            raise Exception("Pdf file password not found! cannot process further")
         file_path = unlock_pdf(file_path=file_path, password=password_dict['password'])
 
     bank_name = get_bank_from_email(email=from_email)
@@ -97,7 +97,7 @@ def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_ema
     for data in applied_rule_tx:
         data["user_id"] = user_obj["id"]
         data["bank_account_id"] = account_details["id"]
-        
+
          # FIX: normalize empty reference_id
         if data.get("reference_id") == "":
             data["reference_id"] = None

@@ -145,7 +145,12 @@ celery -A app.celery_app worker --loglevel=info -Q statment_parser
 
 # Start beat scheduler
 celery -A app.celery_app beat --loglevel=info
+
+celery -A app.core.celery_app flower --port=5555 --broker=redis://redis-superset:6379/0
 ```
+
+docker logs -f statement_parser_worker
+
 
 ## Contributing
 
@@ -154,6 +159,7 @@ celery -A app.celery_app beat --loglevel=info
 3. Commit changes (`git commit -am 'Add new bank parser'`)
 4. Push to branch (`git push origin feature/new-bank`)
 5. Open a Pull Request
+
 
 
 

@@ -140,7 +140,7 @@ services:
     depends_on:
       - postgres
       - redis
-    command: celery -A app.core.celery_app worker --loglevel=info -Q statement_parser
+    command: celery -A app.core.celery_app worker --loglevel=info -Q statement_parser, celery, documents
     networks:
       - internal
       - shared_network
@@ -168,8 +168,9 @@ services:
       - shared_network
 
     # Celery Flower (Monitoring)
+
   statement-parser-flower:
-    build: ./StatementParser
+    image: mher/flower
     container_name: statement_parser_flower
     restart: unless-stopped
     env_file:
@@ -184,7 +185,7 @@ services:
     ports:
       - "${FLOWER_PORT:-5555}:5555"
     command: >
-      celery -A app.core.celery_app flower
+      celery flower
       --port=5555
       --broker=${CELERY_BROKER_URL}
       --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}

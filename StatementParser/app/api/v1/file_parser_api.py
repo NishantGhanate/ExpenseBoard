@@ -86,7 +86,8 @@ async def file_upload(
                 'file_path': temp_path,
                 'from_email': from_email,
                 'to_email' : to_email
-            }
+            },
+            queue='statement_parser'
         )
 
         content = {

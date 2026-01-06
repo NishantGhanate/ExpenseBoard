@@ -58,7 +58,7 @@ def create_or_update_bank_pdf(
         with get_cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO statement_pdfs (
+                INSERT INTO ss_statement_pdfs (
                     user_id,
                     sender_email,
                     filename,
@@ -104,7 +104,7 @@ def get_statement_pdf_password(
             cur.execute(
                 """
                 SELECT password_hash
-                FROM statement_pdfs
+                FROM ss_statement_pdfs
                 WHERE user_id = %s
                   AND sender_email = %s
                   AND filename = %s

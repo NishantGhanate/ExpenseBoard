@@ -14,15 +14,14 @@ CREATE TABLE ss_users (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Then create enum and bank_accounts
-CREATE TYPE account_type_enum AS ENUM ('SAVINGS', 'CURRENT', 'SALARY', 'NRE', 'NRO', 'FD', 'RD');
+
 
 CREATE TABLE ss_bank_accounts (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES ss_users(id) ON DELETE CASCADE,
     number VARCHAR(20) NOT NULL,
     ifsc_code VARCHAR(11),
-    type account_type_enum,
+    type VARCHAR(11),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -44,19 +43,18 @@ CREATE TABLE ss_tags (
 );
 
 -- Category -- 'Savings', 'Investment', 'Home Emi', 'Expense', etc.
--- Change column to use enum
+
 -- ALTER TABLE ss_categories
 -- ALTER COLUMN type TYPE category_type
 -- USING type::category_type;
 -- TRUNCATE TABLE ss_categories RESTART IDENTITY CASCADE;
 
 
-CREATE TYPE category_type AS ENUM ('INCOME', 'EXPENSE');
 
 CREATE TABLE ss_categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    type category_type,
+    type VARCHAR(15),
     color VARCHAR(7),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW()
@@ -93,7 +91,7 @@ CREATE TABLE ss_group_members (
 );
 
 -- Financial goals
-CREATE TYPE goal_status_enum AS ENUM ('ACTIVE', 'ACHIEVED', 'PAUSED', 'CANCELLED');
+
 
 CREATE TABLE ss_goals (
     id SERIAL PRIMARY KEY,
@@ -101,7 +99,7 @@ CREATE TABLE ss_goals (
     target_amount DECIMAL(14, 2),
     start_date DATE,
     target_date DATE,
-    status goal_status_enum DEFAULT 'ACTIVE',
+    status VARCHAR(10) DEFAULT 'ACTIVE',
     remarks TEXT,
     color VARCHAR(7),
     user_id INTEGER REFERENCES ss_users(id) ON DELETE CASCADE,

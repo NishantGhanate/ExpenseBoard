@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS ss_categorization_rules (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_rule_user_id ON ss_categorization_rules(user_id);
 CREATE INDEX IF NOT EXISTS idx_rules_active_priority ON ss_categorization_rules(is_active, priority);
+COMMIT;
+
+
 
 -- Function to validate DSL on insert/update
 CREATE OR REPLACE FUNCTION validate_categorization_rule()

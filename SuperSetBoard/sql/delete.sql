@@ -17,7 +17,7 @@ DROP VIEW IF EXISTS ss_v_goals CASCADE;
 DROP VIEW IF EXISTS ss_v_transactions CASCADE;
 
 -- Drop junction tables first (they have foreign keys)
-DROP TABLE IF EXISTS ss_transaction_tags CASCADE;
+
 DROP TABLE IF EXISTS ss_group_members CASCADE;
 
 -- Drop tables with foreign keys
@@ -36,7 +36,7 @@ DROP TABLE IF EXISTS ss_bank_accounts CASCADE;
 COMMIT;
 
 -- Only for tx
-TRUNCATE TABLE ss_transactions, ss_transaction_tags RESTART IDENTITY;
+TRUNCATE TABLE ss_transactions, ss_transaction_tags;
 
 --- Goals
 DROP VIEW IF EXISTS ss_v_goals CASCADE;

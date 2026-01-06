@@ -1,4 +1,4 @@
-CREATE TABLE statement_pdfs (
+CREATE TABLE ss_statement_pdfs (
     id BIGSERIAL PRIMARY KEY,
 
     user_id BIGINT NOT NULL

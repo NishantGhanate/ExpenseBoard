@@ -4,9 +4,12 @@ Docstring for app.tasks.bank_statment_upload
 > source venv/bin/activate
 > source .env
 
-> python app/tasks/bank_statement_upload.py --input files/union1_unlocked.pdf  --from_email noreplyunionbankofindia@unionbankofindia.bank.in --to_email nishant7.ng@gmail.com
-> python app/tasks/bank_statement_upload.py   --input files/kotak.pdf   --from_email noreply@kotak.com   --to_email nishant7.ng@gmail.com
-> python app/tasks/bank_statement_upload.py   --input files/sbi.pdf   --from_email noreply@sbi.com   --to_email nishant7.ng@gmail.com
+> python app/tasks/bank_statement_upload.py --file_path files/sbi.pdf   --from_email noreply@sbi.com   --to_email nishant7.ng@gmail.com
+> python app/tasks/bank_statement_upload.py --filename kotak.pdf --file_path files/kotak.pdf  --from_email BankStatements@kotak.bank.in  --to_email nishant7.ng@gmail.com
+
+> python app/tasks/bank_statement_upload.py --file_path files/union1_unlocked.pdf  --from_email noreplyunionbankofindia@unionbankofindia.bank.in --to_email nishant7.ng@gmail.com
+> python app/tasks/bank_statement_upload.py --file_path files/kotak.pdf   --from_email noreply@kotak.com   --to_email nishant7.ng@gmail.com
+
 """
 
 import logging
@@ -49,6 +52,7 @@ def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_ema
         )
         if not password_dict:
             raise Exception("Pdf file password not found! cannot process further")
+
         file_path = unlock_pdf(file_path=file_path, password=password_dict['password'])
 
     bank_name = get_bank_from_email(email=from_email)
@@ -77,7 +81,7 @@ def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_ema
         FROM ss_categorization_rules
         WHERE user_id = %s
           AND is_active = true
-          AND (bank_id IS NULL OR bank_id = %s)
+          AND (bank_account_id IS NULL OR bank_account_id = %s)
         """,
         (user_obj["id"], account_details["id"]),
     )
@@ -113,13 +117,15 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Extract text")
-    parser.add_argument("--input", required=True, help="Input PDF file path")
+    parser.add_argument("--filename", required=False, help="Input PDF file name", default=None)
+    parser.add_argument("--file_path", required=True, help="Input PDF file path")
     parser.add_argument("--from_email", required=True, help="email sender")
     parser.add_argument("--to_email", required=True, help="email reciever")
     args = parser.parse_args()
 
     result = process_bank_pdf(
-        file_path=args.input,
+        filename=args.filename,
+        file_path=args.file_path,
         from_email=args.from_email,
         to_email=args.to_email,
     )

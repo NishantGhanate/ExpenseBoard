@@ -5,13 +5,19 @@
 BEGIN;
 -- ============================================
 -- 1.  USERS (2 users)
+-- TRUNCATE TABLE ss_users RESTART IDENTITY CASCADE;
+-- SELECT * from ss_users
 -- ============================================
 INSERT INTO ss_users (name, email, relationship, color, is_active) VALUES
 ('Nishant', 'nishant7.ng@gmail.com', 'self', '#3B82F6', TRUE),
 ('Rinisha', 'rburriwar196@gmail.com', 'self', '#3B82F6', TRUE);
 
+
+
 -- ============================================
 -- 2. TAGS (SUB BIN)
+-- TRUNCATE TABLE ss_tags RESTART IDENTITY CASCADE;
+-- SELECT * from ss_tags
 -- ============================================
 INSERT INTO ss_tags (name, is_active, color) VALUES
 ('sip', TRUE, '#10B981'),
@@ -79,6 +85,10 @@ INSERT INTO ss_transaction_types (name, is_active, color) VALUES
 INSERT INTO ss_groups (name, description, color, is_active) VALUES
 ('Mini', 'Couple finance', '#8B5CF6', TRUE);
 
+COMMIT;
+
+
+BEGIN;
 -- ============================================
 -- 7. GROUP MEMBERS
 -- ============================================
@@ -92,8 +102,8 @@ INSERT INTO ss_group_members (group_id, user_id, role) VALUES
 INSERT INTO ss_goals (name, target_amount, start_date, target_date, status, remarks, color, user_id, group_id) VALUES
 ('SIP Fund', 10000000.00, '2026-01-01', '2036-01-01', 'ACTIVE', 'Core', '#F59E0B', 1, NULL),
 ('Emergency Fund', 1000000.00, '2024-01-01', '2027-12-30', 'ACTIVE', '6 months expenses', '#22C55E', 1, NULL),
-('House Down Payment', 2000000.00, '2024-01-01', '2030-12-31', 'ACTIVE', 'For new house', '#3B82F6', NULL, 1),
-('Vacation Fund', 200000.00, '2024-06-01', '2026-30-01', 'ACTIVE', 'Europe trip', '#F59E0B', 2, NULL);
+('House Down Payment', 2000000.00, '2024-01-01', '2030-12-31', 'ACTIVE', 'For new house', '#3B82F6', 1, NULL),
+('Vacation Fund', 200000.00, '2024-06-01', '2026-12-01', 'ACTIVE', 'Europe trip', '#F59E0B', 2, NULL);
 
 
 

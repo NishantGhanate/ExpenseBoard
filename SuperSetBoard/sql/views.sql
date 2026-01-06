@@ -317,7 +317,7 @@ SELECT
     MAX(t.transaction_date) AS last_used
 
 FROM ss_tags tg
-LEFT JOIN ss_transaction_tags ttg ON tg.id = ttg.tag_id
+LEFT JOIN ss_tags ttg ON tg.id = ttg.tag_id
 LEFT JOIN ss_transactions t ON ttg.transaction_id = t.id AND t.is_active = TRUE
 WHERE tg.is_active = TRUE
 GROUP BY tg.id

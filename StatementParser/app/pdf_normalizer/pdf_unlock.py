@@ -11,6 +11,7 @@ Docstring for app.pdf_normalizer.pdf_unlock
 
 import argparse
 import logging
+from datetime import datetime
 from io import BytesIO
 
 import pdfplumber
@@ -35,13 +36,15 @@ def is_pdf_password_protected(file_path: str) -> bool:
         return False
     except Exception as e:
         # Typical error: "Password required or incorrect password"
-        return "password" in str(e).lower()
+        print(e)
 
+    return True
 
 def unlock_pdf(file_path: str, password: str):
 
     # Unlock PDF
-    output_path = file_path or file_path.replace(".pdf", "_unlocked.pdf")
+    name = f"_unlocked_{datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}.pdf"
+    output_path = file_path.replace(".pdf", name)
     with pikepdf.open(file_path, password=password) as pdf:
         pdf.save(output_path)
         logger.info(f"Unlocked PDF saved to: {output_path}")

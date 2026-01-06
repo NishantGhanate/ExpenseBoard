@@ -130,6 +130,11 @@ CREATE TABLE ss_transaction_types (
 
 
 -- Transactions table
+
+-- SELECT conname, pg_get_constraintdef(oid)
+-- FROM pg_constraint
+-- WHERE conname = 'uq_transaction_amount_reference';
+
 CREATE TABLE ss_transactions (
     id SERIAL PRIMARY KEY,
     entity_name VARCHAR(200),
@@ -151,7 +156,7 @@ CREATE TABLE ss_transactions (
     updated_at TIMESTAMP DEFAULT NOW(),
 
     -- Unique constraint: amount + reference_id together
-    CONSTRAINT uq_transaction_amount_reference UNIQUE (amount, reference_id)
+    CONSTRAINT uq_transaction_amount_reference UNIQUE NULLS NOT DISTINCT (amount, reference_id, bank_account_id)
 );
 
 -- Unique constraint: same user can't have duplicate reference_id

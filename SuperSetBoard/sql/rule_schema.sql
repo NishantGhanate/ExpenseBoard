@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS ss_categorization_rules (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     user_id INTEGER NOT NULL REFERENCES ss_users(id) ON DELETE CASCADE,
+    bank_account_id INTEGER REFERENCES ss_bank_accounts(id) ON DELETE CASCADE,-- optional to run bank specific rule
     dsl_text TEXT NOT NULL,
     priority INTEGER DEFAULT 100,
     is_active BOOLEAN DEFAULT TRUE,

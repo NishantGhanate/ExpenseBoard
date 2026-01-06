@@ -10,8 +10,7 @@ from pathlib import Path
 from typing import List, Optional
 from urllib.parse import quote_plus
 
-from pydantic import field_validator
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -56,6 +55,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: Environment
     NOTIFY_EMAILS: Optional[List[str]]
     TIMEZONE: str = "Asia/Kolkata"
+    FERNET_KEY: str
 
     # DB config
     DATABASE_TYPE: DatabaseType

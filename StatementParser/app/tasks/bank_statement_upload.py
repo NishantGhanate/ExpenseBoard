@@ -5,6 +5,8 @@ Docstring for app.tasks.bank_statment_upload
 > source .env
 
 > python app/tasks/bank_statement_upload.py --input files/union1_unlocked.pdf  --from_email noreplyunionbankofindia@unionbankofindia.bank.in --to_email nishant7.ng@gmail.com
+> python app/tasks/bank_statement_upload.py   --input files/kotak.pdf   --from_email noreply@kotak.com   --to_email nishant7.ng@gmail.com
+> python app/tasks/bank_statement_upload.py   --input files/sbi.pdf   --from_email noreply@sbi.com   --to_email nishant7.ng@gmail.com
 """
 
 import logging
@@ -18,6 +20,8 @@ from app.pdf_normalizer.parser import parse_statement
 from app.pdf_normalizer.utils import get_bank_from_email
 from app.rule_engine.evaluator import TransactionCategorizer
 from app.rule_engine.parser import parse
+from app.pdf_normalizer.pdf_unlock import is_pdf_password_protected, unlock_pdf
+from app.model_actions.statement_pdf import get_statement_pdf_password
 
 logger = logging.getLogger("app")
 
@@ -27,11 +31,25 @@ logger = logging.getLogger("app")
     name="app.tasks.bank_statement_upload.process_bank_pdf",
     queue="statment_parser",
 )
-def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
+def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_email: str):
     """
     This function binds logics togther.
     Gets bank name,
     """
+    # call db and get user_id based on to_email from ss_users table
+    user_dict = fetch_one(
+        query="SELECT id FROM ss_users WHERE email = %s and is_active=true", params=(to_email,)
+    )
+    logger.debug(user_dict)
+
+    if is_pdf_password_protected(file_path= file_path):
+        password_dict = get_statement_pdf_password(
+            user_id=user_dict['id'],
+            sender_email=from_email,
+            filename=filename
+        )
+
+        file_path = unlock_pdf(file_path=file_path, password=password_dict['password'])
 
     bank_name = get_bank_from_email(email=from_email)
     result = parse_statement(pdf_path=file_path, bank_name=bank_name)
@@ -79,6 +97,10 @@ def process_bank_pdf(self, file_path: str, from_email: str, to_email: str):
     for data in applied_rule_tx:
         data["user_id"] = user_obj["id"]
         data["bank_account_id"] = account_details["id"]
+        
+         # FIX: normalize empty reference_id
+        if data.get("reference_id") == "":
+            data["reference_id"] = None
 
     stats = bulk_insert_transactions(transactions=applied_rule_tx)
     logger.info(f"Bulk insert stats = {stats}")

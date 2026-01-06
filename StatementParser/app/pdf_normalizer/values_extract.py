@@ -61,7 +61,11 @@ def extract_entity_name(details: str) -> str | None:
             return match.group(1).strip()
         parts = details.split("/")
         if len(parts) >= 2:
-            return parts[1].strip()
+            name = parts[1].strip()
+            # remove trailing single-letter truncation
+            if len(name.split()) > 1 and len(name.split()[-1]) == 1:
+                name = " ".join(name.split()[:-1])
+            return name
 
     # NEFT format
     if details.upper().startswith("NEFT"):

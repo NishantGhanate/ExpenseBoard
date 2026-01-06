@@ -9,7 +9,7 @@ Docstring :
 """
 
 from app.common.enums import BankName
-from app.pdf_normalizer.banks import HdfcBankParser, SBIBankParser, UnionBankParser
+from app.pdf_normalizer.banks import HdfcBankParser, SBIBankParser, UnionBankParser, KotakBankParser
 from app.pdf_normalizer.layout_detector import BankDetector
 from app.pdf_normalizer.utils import (
     debug_tables,
@@ -20,6 +20,7 @@ from app.pdf_normalizer.utils import (
 BANK_PARSER_MAP = {
     BankName.UNION: UnionBankParser,
     BankName.SBI: SBIBankParser,
+    BankName.KOTAK: KotakBankParser,
 }
 
 
@@ -47,7 +48,8 @@ def parse_statement(pdf_path: str, bank_name: BankName = None):
         parser_cls = BANK_PARSER_MAP[bank_name]
 
     parser = parser_cls()
-
+    parser.pdf_path = pdf_path
+    
     # rows = debug_tables(pdf_path)
     rows = extract_table_rows(pdf_path)
     account_details = parser.parse_account_details(text=text)
@@ -64,7 +66,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    result = parse_statement(pdf_path=args.input)
+    result = parse_statement(pdf_path=args.input, bank_name=BankName.KOTAK)
     
     print(len(result["transactions"]))
 

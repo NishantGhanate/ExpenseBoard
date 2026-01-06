@@ -30,6 +30,7 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 -- =============================================================================
 -- Salary
 ('Salary Credit', 'rule "Salary Credit" where description:regex:"SALARY|PAYROLL":i and type:eq:"credit":i assign category_id:1 type_id:1 priority 10;', 10, 1, TRUE),
+('Interest Credit','rule "Interest Credit" where description:con:"INT.PD":i and type:eq:"credit":i assign category_id:1 type_id:1 priority 12;',12, 1, TRUE),
 
 -- Freelance Income (Wise, Skydo, etc.)
 ('Wise Income', 'rule "Wise Income" where description:regex:"WISE|NEFT.WISE PAYMENTS|ESCROW":i and type:eq:"credit":i assign category_id:2 type_id:1 priority 15;', 15, 1, TRUE),

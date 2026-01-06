@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import Dict, List
 
 Transaction = Dict[str, str]
+
 
 class BankStatementParser(ABC):
 
     bank_name: str
-
 
     @abstractmethod
     def detect(self, text: str) -> bool:

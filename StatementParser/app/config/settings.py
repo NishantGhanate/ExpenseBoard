@@ -53,7 +53,7 @@ class Settings(BaseSettings):
 
     NAME: str = "StatementParser"
     ENVIRONMENT: Environment
-    NOTIFY_EMAILS: Optional[List[str]]
+    NOTIFY_EMAILS: Optional[List[str]]= None
     TIMEZONE: str = "Asia/Kolkata"
     FERNET_KEY: str
 
@@ -102,7 +102,7 @@ class Settings(BaseSettings):
         db_user = data.get("DATABASE_USER")
         db_pwd = data.get("DATABASE_PASSWORD")
         db_server = data.get("DATABASE_HOST")
-        db_port = data.get("DATABASE_PASSWORD")
+        db_port = data.get("DATABASE_PORT")
         db_name = data.get("DATABASE_NAME")
         db_driver = data.get("DB_DRIVER", "ODBC Driver 18 for SQL Server")
 
@@ -184,7 +184,7 @@ class Settings(BaseSettings):
         db_user = data.get("DATABASE_USER")
         db_pwd = data.get("DATABASE_PASSWORD")
         db_server = data.get("DATABASE_HOST")
-        db_port = data.get("DATABASE_PASSWORD")
+        db_port = data.get("DATABASE_PORT")
         db_name = data.get("DATABASE_NAME")
         driver = data.get("DB_DRIVER", 'Not set')
 

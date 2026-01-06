@@ -61,3 +61,39 @@ class TrascationType(StrEnum):
     CREDIT = 'credit'
     DEBIT = 'debit'
     SELF_TRANSFER = 'self transfer'
+
+
+class AccountType(StrEnum):
+    SAVINGS = "SAVINGS"
+    CURRENT = "CURRENT"
+    SALARY = "SALARY"
+    NRE = "NRE"
+    NRO = "NRO"
+    FD = "FD"
+    RD = "RD"
+
+    @classmethod
+    def from_raw(cls, value: str | None):
+        if not value:
+            return None
+
+        raw = value.replace(" ", "").upper()
+
+        mapping = {
+            "SAVING": cls.SAVINGS,
+            "SAVINGS": cls.SAVINGS,
+            "CURRENT": cls.CURRENT,
+            "SALARY": cls.SALARY,
+            "NRE": cls.NRE,
+            "NRO": cls.NRO,
+            "FD": cls.FD,
+            "FIXEDDEPOSIT": cls.FD,
+            "RD": cls.RD,
+            "RECURRING": cls.RD,
+        }
+
+        for key, enum_val in mapping.items():
+            if raw.startswith(key):
+                return enum_val
+
+        return None

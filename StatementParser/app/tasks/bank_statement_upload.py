@@ -102,10 +102,6 @@ def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_ema
         data["user_id"] = user_obj["id"]
         data["bank_account_id"] = account_details["id"]
 
-         # FIX: normalize empty reference_id
-        if data.get("reference_id") == "":
-            data["reference_id"] = None
-
     stats = bulk_insert_transactions(transactions=applied_rule_tx)
     logger.info(f"Bulk insert stats = {stats}")
 

@@ -32,7 +32,6 @@ def bulk_insert_transactions(
         query = """
             INSERT INTO ss_transactions ({})
             VALUES ({})
-            ON CONFLICT DO NOTHING
         """.format(
             ', '.join(columns),
             ', '.join(['%s'] * len(columns))

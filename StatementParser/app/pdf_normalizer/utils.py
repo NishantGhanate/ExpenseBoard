@@ -65,7 +65,7 @@ def extract_table_rows(pdf_path: str) -> list[list[str]]:
                     continue
 
                 expected_cols = len(data[0])
-                pending_row = None
+                pending_row = []
 
                 for row in data:
                     if not row or not any(cell and cell.strip() for cell in row):
@@ -121,19 +121,9 @@ def is_date_like(text: str) -> bool:
     return bool(re.match(r"^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$", text))
 
 
-def has_date_header(row: list[str]) -> int | None:
-    """Check if row has a 'Date' column header. Returns column index or None."""
-    if not row:
-        return None
-
-    for i, cell in enumerate(row):
-        if cell and "date" in cell.lower().strip():
-            return i
-
-    return None
 
 
-def extract_table_rows(pdf_path: str) -> list[list[str]]:
+def extract_table_rows_v2(pdf_path: str) -> list[list[str]]:
     """Extract rows from tables that have a 'Date' column header."""
     all_rows = []
 

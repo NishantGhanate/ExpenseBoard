@@ -167,6 +167,32 @@ services:
       - internal
       - shared_network
 
+    # Celery Flower (Monitoring)
+  statement-parser-flower:
+    build: ./StatementParser
+    container_name: statement_parser_flower
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
+    depends_on:
+      - redis
+      - statement-parser-worker
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    command: >
+      celery -A app.core.celery_app flower
+      --port=5555
+      --broker=${CELERY_BROKER_URL}
+      --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+    networks:
+      - internal
+      - shared_network
+
+
 volumes:
   superset_pgdata:
   superset_redisdata:

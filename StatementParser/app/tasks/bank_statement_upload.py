@@ -31,7 +31,7 @@ logger = logging.getLogger("app")
 @shared_task(
     bind=True,
     name="app.tasks.bank_statement_upload.process_bank_pdf",
-    queue="statment_parser",
+    queue="statement_parser",
 )
 def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_email: str):
     """

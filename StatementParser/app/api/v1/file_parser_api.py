@@ -21,8 +21,9 @@ file_upload_router = APIRouter(prefix=PREFIX)
 
 MAX_SIZE_MB = 200  # optional size limit
 CHUNK = 1024 * 1024 * 5  # 5 MB
-CUSTOM_TEMP_DIR = temp_dir() / "temp" / "statements"
+CUSTOM_TEMP_DIR = Path("/app/temp/statements")
 CUSTOM_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+logger.debug(f"CUSTOM DIR = {CUSTOM_TEMP_DIR}")
 
 
 class FileMeta(BaseModel):
@@ -52,7 +53,7 @@ async def file_upload(
         suffix = Path(file.filename).suffix or ""
         temp_path = ""
 
-        logger.debug(f"Saving file to {CUSTOM_TEMP_DIR}")
+        logger.debug(f"Saving file to {CUSTOM_TEMP_DIR} / {file.filename}")
         with NamedTemporaryFile(
             delete=False,
             suffix=suffix,

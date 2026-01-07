@@ -89,7 +89,7 @@ services:
       - shared_network
 
   # Statement Parser API
-  api:
+  statement-parser-api:
     build: ./StatementParser
     container_name: statement_parser_api
     restart: unless-stopped
@@ -109,6 +109,7 @@ services:
       CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
     volumes:
       - ./StatementParser/files:/app/files
+      - ./StatementParser/temp:/app/temp
     depends_on:
       - postgres
       - redis
@@ -137,10 +138,11 @@ services:
       CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
     volumes:
       - ./StatementParser/files:/app/files
+      - ./StatementParser/temp:/app/temp
     depends_on:
       - postgres
       - redis
-    command: celery -A app.core.celery_app worker --loglevel=info -Q statement_parser
+    command: celery -A app.core.celery_app worker --loglevel=info -Q statement_parser,celery
     networks:
       - internal
       - shared_network
@@ -156,8 +158,12 @@ services:
       PYTHONPATH: /app
       DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
       REDIS_URL: redis://redis:6379/1
-      sCELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
+
+    volumes:
+      - ./StatementParser/files:/app/files
+      - ./StatementParser/temp:/app/temp
 
     depends_on:
       - postgres
@@ -166,6 +172,33 @@ services:
     networks:
       - internal
       - shared_network
+
+    # Celery Flower (Monitoring)
+
+  statement-parser-flower:
+    image: mher/flower
+    container_name: statement_parser_flower
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
+    depends_on:
+      - redis
+      - statement-parser-worker
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    command: >
+      celery flower
+      --port=5555
+      --broker=${CELERY_BROKER_URL}
+      --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+    networks:
+      - internal
+      - shared_network
+
 
 volumes:
   superset_pgdata:

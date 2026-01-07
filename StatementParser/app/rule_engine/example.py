@@ -51,7 +51,7 @@ def example_complete_categorization():
     transaction = {
         "entity_name": "KANTI RAMULU GA",
         "transaction_date": "2025-11-13",
-        "person_id": 1,
+        "user_id": 1,
         "type_id": None,
         "category_id": None,
         "tag_id": None,

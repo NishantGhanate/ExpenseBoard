@@ -245,7 +245,7 @@ class Parser:
             return NotNullOperator()
 
         else:
-            raise ParseError(f"Unknown operator '{current.value}'", current.position)
+            raise ParseError(f"Unknown operator {current.type} - '{current.value}'", current.position)
 
     def _parse_case_flag(self) -> bool:
         """Parse optional :i flag for case-insensitive."""
@@ -271,12 +271,12 @@ class Parser:
         return values
 
     def _parse_assignments(self) -> Assignment:
-        """Parse: category_id:N tag_id:N type_id:N payment_method_id:N"""
+        """Parse: category_id:N tag_id:N type_id:N payment_method_id:N goal_id:N"""
         assignment = Assignment()
 
         while self._current().type in (
             TokenType.CATEGORY_ID, TokenType.TAG_ID,
-            TokenType.TYPE_ID, TokenType.PAYMENT_METHOD_ID
+            TokenType.TYPE_ID, TokenType.PAYMENT_METHOD_ID, TokenType.GOAL_ID
         ):
             field_type = self._advance().type
             self._expect(TokenType.COLON)
@@ -290,6 +290,8 @@ class Parser:
                 assignment.type_id = value
             elif field_type == TokenType.PAYMENT_METHOD_ID:
                 assignment.payment_method_id = value
+            elif field_type == TokenType.GOAL_ID:
+                assignment.goal_id = value
 
         return assignment
 

@@ -1,8 +1,3 @@
-I don't have access to `D:\Github\ExpenseBoard`. I can only access `D:\ActivePrime\Repo`.
-
-However, based on our conversation about the expense tracking system, I can create a README for you:
-
-```markdown
 # ExpenseBoard
 
 A personal finance management system with bank statement parsing, expense categorization, and analytics powered by Apache Superset.
@@ -91,49 +86,22 @@ cp .env.example .env
 # Start all services
 docker-compose up -d
 
-# Initialize database
+# [OPTIONAL] Initialize database
 docker exec -it statement_parser_api python -m alembic upgrade head
 
 # Access services
-# - API: http://localhost:8000
-# - Superset: http://localhost:8088
+- API: http://localhost:8000/docs
+- Superset: http://localhost:8088
 ```
 
 ### Environment Variables
 
 ```env
-# Database
-DATABASE_USER=superset
-DATABASE_PASSWORD=your_secure_password
-DATABASE_DB=superset
-DATABASE_HOST=postgres
-DATABASE_PORT=5432
-
-# Redis
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-# Superset
-SUPERSET_SECRET_KEY=your_secret_key
-SUPERSET_PORT=8088
-
-# API
-API_PORT=8000
+Refer to .env.example file
 ```
 
-## Usage
 
-### Parse Bank Statement
 
-```python
-from app.parsers import parse_statement
-from app.parsers.base import BankName
-
-result = parse_statement(
-    pdf_path="statement.pdf",
-    bank_name=BankName.UNION
-)
-```
 
 ### API Endpoints
 
@@ -261,5 +229,5 @@ MIT License
 - [pdfplumber](https://github.com/jsvine/pdfplumber) - PDF parsing
 - [Apache Superset](https://superset.apache.org/) - Analytics
 - [FastAPI](https://fastapi.tiangolo.com/) - API framework
-```
+
 

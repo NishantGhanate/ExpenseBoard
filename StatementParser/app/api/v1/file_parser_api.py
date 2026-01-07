@@ -7,12 +7,13 @@ from datetime import date
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status, Depends
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from app.api.v1 import PREFIX
 from app.common.file_util import temp_dir
 from app.tasks.bank_statement_upload import process_bank_pdf
+from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile,
+                     status)
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 logger = logging.getLogger(name="app")
 
@@ -20,8 +21,9 @@ file_upload_router = APIRouter(prefix=PREFIX)
 
 MAX_SIZE_MB = 200  # optional size limit
 CHUNK = 1024 * 1024 * 5  # 5 MB
-CUSTOM_TEMP_DIR = temp_dir() / "temp" / "statements"
+CUSTOM_TEMP_DIR = Path("/app/temp/statements")
 CUSTOM_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+logger.debug(f"CUSTOM DIR = {CUSTOM_TEMP_DIR}")
 
 
 class FileMeta(BaseModel):
@@ -51,7 +53,7 @@ async def file_upload(
         suffix = Path(file.filename).suffix or ""
         temp_path = ""
 
-        logger.debug(f"Saving file to {CUSTOM_TEMP_DIR}")
+        logger.debug(f"Saving file to {CUSTOM_TEMP_DIR} / {file.filename}")
         with NamedTemporaryFile(
             delete=False,
             suffix=suffix,
@@ -81,10 +83,12 @@ async def file_upload(
         # # step 1: save the file
         task_obj = process_bank_pdf.apply_async(
             kwargs = {
+                'filename': file.filename,
                 'file_path': temp_path,
                 'from_email': from_email,
                 'to_email' : to_email
-            }
+            },
+            queue='statement_parser'
         )
 
         content = {

@@ -18,7 +18,7 @@ pool = ConnectionPool(
     conninfo=settings.SQL_DATABASE_URL,  # postgresql://user:pass@host:port/db
     min_size=5,
     max_size=50,
-    timeout=30,
+    timeout=10,
     max_idle=300,  # close idle connections after 5 min
 )
 

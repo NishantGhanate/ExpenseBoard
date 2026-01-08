@@ -135,19 +135,6 @@ for rule in matching_rules:
     print(f"- {rule.name} (priority: {rule.priority})")
 ```
 
-## Running Tests
-
-```bash
-cd D:\ActivePrime\Repo\lux
-pytest poc/transaction_categorizer/test_categorizer.py -v
-```
-
-## Running Examples
-
-```bash
-cd D:\ActivePrime\Repo\lux
-python -m poc.transaction_categorizer.example
-```
 
 ## Database Schema
 

@@ -5,13 +5,19 @@ Stores rules as DSL text in database, parses on load.
 """
 import logging
 from typing import List, Optional
-from app.rule_engine.ast_nodes import (
-    CategorizationRule, OrBlock, AndBlock, FilterExpression, Assignment,
-    EqualOperator, NotEqualOperator, GreaterThanOperator, LessThanOperator,
-    GreaterThanEqualOperator, LessThanEqualOperator, BetweenOperator,
-    ContainsOperator, NotContainsOperator, StartsWithOperator, EndsWithOperator,
-    RegexOperator, InOperator, NotInOperator, NullOperator, NotNullOperator
-)
+
+from app.rule_engine.ast_nodes import (AndBlock, BetweenOperator,
+                                       CategorizationRule, ContainsOperator,
+                                       EndsWithOperator, EqualOperator,
+                                       FilterExpression,
+                                       GreaterThanEqualOperator,
+                                       GreaterThanOperator, InOperator,
+                                       LessThanEqualOperator, LessThanOperator,
+                                       NotContainsOperator, NotEqualOperator,
+                                       NotInOperator, NotNullOperator,
+                                       NullOperator, OrBlock, RegexOperator,
+                                       StartsWithOperator)
+
 from .parser import parse
 
 logger = logging.getLogger("app")

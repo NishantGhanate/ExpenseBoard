@@ -271,28 +271,66 @@ class Parser:
         return values
 
     def _parse_assignments(self) -> Assignment:
-        """Parse: category_id:N tag_id:N type_id:N payment_method_id:N goal_id:N"""
+        """Parse dynamic assignments: field_name:value [field_name:value ...]"""
         assignment = Assignment()
+        
+        # Known assignment field token types for backward compatibility
+        known_field_types = {
+            TokenType.CATEGORY_ID: 'category_id',
+            TokenType.TAG_ID: 'tag_id',
+            TokenType.TYPE_ID: 'type_id',
+            TokenType.PAYMENT_METHOD_ID: 'payment_method_id',
+            TokenType.GOAL_ID: 'goal_id'
+        }
 
-        while self._current().type in (
-            TokenType.CATEGORY_ID, TokenType.TAG_ID,
-            TokenType.TYPE_ID, TokenType.PAYMENT_METHOD_ID, TokenType.GOAL_ID
-        ):
-            field_type = self._advance().type
-            self._expect(TokenType.COLON)
-            value = int(self._expect(TokenType.NUMBER).value)
-
-            if field_type == TokenType.CATEGORY_ID:
-                assignment.category_id = value
-            elif field_type == TokenType.TAG_ID:
-                assignment.tag_id = value
-            elif field_type == TokenType.TYPE_ID:
-                assignment.type_id = value
-            elif field_type == TokenType.PAYMENT_METHOD_ID:
-                assignment.payment_method_id = value
-            elif field_type == TokenType.GOAL_ID:
-                assignment.goal_id = value
-
+        while True:
+            current = self._current()
+            
+            # Stop if we hit priority or semicolon (end of assignments)
+            if current.type in (TokenType.PRIORITY, TokenType.SEMICOLON, TokenType.EOF):
+                break
+            
+            # Check if it's a known field type token
+            if current.type in known_field_types:
+                field_name = known_field_types[current.type]
+                self._advance()
+                self._expect(TokenType.COLON)
+                value = int(self._expect(TokenType.NUMBER).value)
+                assignment.set(field_name, value)
+            
+            # Or it could be a custom field (identifier:number)
+            elif current.type == TokenType.IDENTIFIER:
+                field_name = current.value
+                self._advance()
+                
+                # Check if this is actually an assignment (followed by :)
+                if not self._peek(TokenType.COLON):
+                    # Not an assignment, put it back
+                    self.pos -= 1
+                    break
+                
+                self._advance()  # consume :
+                
+                # Parse value (can be number or string)
+                if self._peek(TokenType.NUMBER):
+                    value = int(self._expect(TokenType.NUMBER).value)
+                elif self._peek(TokenType.STRING):
+                    value = self._expect(TokenType.STRING).value
+                else:
+                    raise ParseError(
+                        f"Expected number or string for assignment value",
+                        self._current().position
+                    )
+                
+                assignment.set(field_name, value)
+            else:
+                # No more assignments
+                break
+        
+        # Ensure at least one assignment was made
+        if not assignment.fields:
+            raise ParseError("At least one assignment is required", self._current().position)
+        
         return assignment
 
     # Helper methods

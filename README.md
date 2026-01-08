@@ -83,6 +83,9 @@ cd ExpenseBoard
 cp .env.example .env
 # Edit .env with your configuration
 
+
+docker build --no-cache -t superset-custom .
+
 # Start all services
 docker-compose up -d
 

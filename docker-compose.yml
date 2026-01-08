@@ -32,7 +32,7 @@ services:
       - shared_network
 
   superset:
-    image: ${SUPERSET_IMAGE:-superset-custom}
+    image: ${SUPERSET_IMAGE:-superset-custom}}
     container_name: superset_app
     env_file:
       - .env
@@ -50,7 +50,7 @@ services:
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
     volumes:
-      - ./superset_home:/app/superset_home
+      - ./SuperSetBoard/superset_home:/app/superset_home
       - ./SuperSetBoard/superset_config.py:/app/pythonpath/superset_config.py
       - ./SuperSetBoard/init_superset.sh:/init_superset.sh
     entrypoint: ["/bin/bash", "/init_superset.sh"]
@@ -96,7 +96,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "${API_PORT:-8001}:8000"
     environment:
       PYTHONPATH: /app
       DATABASE_HOST: ${DATABASE_HOST}
@@ -189,7 +189,8 @@ services:
       - redis
       - statement-parser-worker
     ports:
-      - "${FLOWER_PORT:-5555}:5555"
+      # Map host 5556 to container 5555
+      - "${FLOWER_PORT:-5556}:5555"
     command: >
       celery flower
       --port=5555
@@ -207,6 +208,6 @@ volumes:
 networks:
   internal:
   shared_network:
-    name: ${SHARED_NETWORK_NAME:-shared_network}
+    name: ${SHARED_NETWORK_NAME}
     driver: bridge
     attachable: true

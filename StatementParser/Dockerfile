@@ -2,6 +2,9 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
+# Create the files folder
+RUN mkdir -p /app/files
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \

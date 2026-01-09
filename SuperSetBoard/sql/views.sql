@@ -1,7 +1,3 @@
--- =============================================================================
--- FULL RESTORE: ALL 11 CANONICAL VIEWS (FIXED)
--- =============================================================================
-
 -- 1. Canonical Transaction Fact View
 CREATE OR REPLACE VIEW v_fact_transactions AS
 SELECT

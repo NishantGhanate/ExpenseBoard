@@ -68,8 +68,9 @@ INSERT INTO ss_payment_methods (type, name, color, is_active) VALUES
 ('Bank Transfer', 'NEFT/IMPS', '#FF0000', TRUE),
 ('RTNCHG', 'Auto Debit', '#FF0000', TRUE),
 ('NACH', 'Auto clearing', '#FF0000', TRUE),
-('NEFT', 'Bank Transfer', '#FF0000', TRUE);
-
+('NEFT', 'Bank Transfer', '#FF0000', TRUE),
+('ATM', 'Atm withdraw', '#FF0000', TRUE),
+('Cash Deposit', 'Cash Deposit', '#FF0000', TRUE);
 
 -- ============================================
 -- 5. TRANSACTION TYPES

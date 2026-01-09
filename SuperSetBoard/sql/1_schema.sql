@@ -1,5 +1,7 @@
 BEGIN;
 
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- 1. Users Table
 CREATE TABLE ss_users (
     id SERIAL PRIMARY KEY,

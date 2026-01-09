@@ -11,13 +11,12 @@ Set USE_DB=true to enable MSSQL result backend.
 
 import logging
 
+from app.config.settings import settings
+from app.core.celery_signal import BaseTaskSignal
 from celery import Celery
 from celery.backends.database.models import TaskExtended, TaskSet
 from celery.schedules import crontab
 from sqlalchemy import BigInteger, create_engine
-
-from app.config.settings import settings
-from app.core.celery_signal import BaseTaskSignal
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ celery_app.conf.update(
 # Schedule example
 celery_app.conf.beat_schedule = {
     "daily-task": {
-        "task": "app.tasks.clean_up.cleanup_resources",
+        "task": "app.tasks.cleanup.cleanup_resources",
         "schedule": crontab(hour="9-21", day_of_week="1-5"),
     },
 }

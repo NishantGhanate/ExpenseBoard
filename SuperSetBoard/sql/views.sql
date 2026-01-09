@@ -1,365 +1,204 @@
--- ============================================
--- VIEW 1: Full Transaction Details
--- ============================================
-CREATE VIEW ss_v_transactions AS
+-- =============================================================================
+-- FULL RESTORE: ALL 11 CANONICAL VIEWS (FIXED)
+-- =============================================================================
+
+-- 1. Canonical Transaction Fact View
+CREATE OR REPLACE VIEW v_fact_transactions AS
 SELECT
-    t.id,
+    t.id AS transaction_id,
     t.transaction_date,
-    t.entity_name,
+    u.name AS user_name,
+    ba.number AS account_number,
+    ba.type AS account_type,
+    tt.name AS transaction_type, -- 'Credit' or 'Debit'
     t.amount,
-    t.currency,
-    t.description,
-    t.remarks,
-    t.is_active,
-    t.created_at,
-    t.updated_at,
-
-    -- Person
-    p.id AS user_id,
-    p.name AS person_name,
-    p.color AS person_color,
-
-    -- Type
-    tt.id AS type_id,
-    tt.name AS type_name,
-    tt.color AS type_color,
-
-    -- Category
-    c.id AS category_id,
+    -- Core analytical field: Credits (+) and Debits (-)
+    CASE WHEN tt.name = 'Debit' THEN -t.amount ELSE t.amount END AS signed_amount,
+    
+    -- WEALTH TRAJECTORY: Running total per user to show individual growth
+    SUM(CASE WHEN tt.name = 'Debit' THEN -t.amount ELSE t.amount END) 
+        OVER (PARTITION BY t.user_id ORDER BY t.transaction_date, t.id) AS running_wealth,
+    
     c.name AS category_name,
-    c.type AS category_type,
-    c.color AS category_color,
-
-    -- Tag (single)
-    tg.id AS tag_id,
+    c.type AS category_group, -- 'INCOME' or 'EXPENSE'
+    pm.name AS payment_method, 
+    pm.type AS payment_type, -- ADDED: This is your UPI/Wallet/NetBanking/etc.
     tg.name AS tag_name,
-    tg.color AS tag_color,
+    
+    -- BUDGET DISCIPLINE: Helps calculate "Burn Rate" for essentials
+    CASE WHEN tg.name = 'essential' THEN t.amount ELSE 0 END AS essential_spend,
+    
+    t.description,
+    t.goal_id
+FROM
+    ss_transactions t
+    LEFT JOIN ss_users u ON u.id = t.user_id
+    LEFT JOIN ss_bank_accounts ba ON ba.id = t.bank_account_id
+    LEFT JOIN ss_categories c ON c.id = t.category_id
+    LEFT JOIN ss_transaction_types tt ON tt.id = t.type_id
+    LEFT JOIN ss_payment_methods pm ON pm.id = t.payment_method_id
+    LEFT JOIN ss_tags tg ON tg.id = t.tag_id
+WHERE t.is_active = TRUE;
 
-    -- Payment Method
-    pm.id AS payment_method_id,
-    pm.type AS payment_method_type,
-    pm.name AS payment_method_name,
-    pm.bank_name,
-    pm.color AS payment_method_color,
-
-    -- Goal
+-- 2. Canonical Goal Actuals View
+CREATE OR REPLACE VIEW v_fact_goal_performance AS
+SELECT
     g.id AS goal_id,
     g.name AS goal_name,
-    g.color AS goal_color
-
-FROM ss_transactions t
-LEFT JOIN ss_users p ON t.user_id = p.id
-LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
-LEFT JOIN ss_categories c ON t.category_id = c.id
-LEFT JOIN ss_tags tg ON t.tag_id = tg.id
-LEFT JOIN ss_payment_methods pm ON t.payment_method_id = pm.id
-LEFT JOIN ss_goals g ON t.goal_id = g.id;
-
--- Recent transactions view
-CREATE VIEW ss_v_recent_transactions AS
-SELECT * FROM ss_v_transactions
-WHERE transaction_date >= CURRENT_DATE - INTERVAL '30 days'
-  AND is_active = TRUE
-ORDER BY transaction_date DESC, created_at DESC;
-
-
--- ============================================
--- VIEW 2: Goal Progress Tracking
--- ============================================
-CREATE VIEW ss_v_goals AS
-SELECT
-    g.id,
-    g.name,
     g.target_amount,
     g.start_date,
-    g.target_date,
-    g.status,
-    g.remarks,
-    g.color,
-    g.created_at,
-    g.updated_at,
+    g.target_date AS end_date,
+    COALESCE(SUM(t.amount), 0) AS current_actual,
+    (g.target_amount - COALESCE(SUM(t.amount), 0)) AS gap_remaining,
+    ROUND(CASE WHEN g.target_amount > 0 THEN (SUM(t.amount) / g.target_amount) * 100 ELSE 0 END, 2) AS completion_pct,
+    
+    -- ANALYTICAL KPI: How much do you need to save per month starting today?
+    CASE 
+        WHEN g.target_date > CURRENT_DATE AND (g.target_amount - COALESCE(SUM(t.amount), 0)) > 0 
+        THEN ROUND((g.target_amount - COALESCE(SUM(t.amount), 0)) / 
+             NULLIF(EXTRACT(year FROM age(g.target_date, CURRENT_DATE))*12 + EXTRACT(month FROM age(g.target_date, CURRENT_DATE)), 0), 2)
+        ELSE 0 
+    END AS velocity_required_monthly
+FROM
+    ss_goals g
+    LEFT JOIN ss_transactions t ON t.goal_id = g.id AND t.is_active = TRUE
+GROUP BY g.id, g.name, g.target_amount, g.start_date, g.target_date;
 
-    -- Ownership type
+-- 3. Canonical Goal Health View
+CREATE OR REPLACE VIEW v_fact_goal_health AS
+SELECT
+    goal_id,
+    goal_name,
+    user_id,
+    user_name,
+    target_amount,
+    actual_amount,
+    completion_percent,
     CASE
-        WHEN g.user_id IS NOT NULL THEN 'individual'
-        ELSE 'group'
-    END AS ownership_type,
+        WHEN completion_percent >= 100 THEN 'achieved'
+        WHEN completion_percent >= 75 THEN 'on_track'
+        WHEN completion_percent >= 40 THEN 'at_risk'
+        ELSE 'off_track'
+    END AS goal_status
+FROM
+    v_fact_goal_actuals;
 
-    -- Person (for individual goals)
-    p.id AS user_id,
-    p.name AS person_name,
-    p.color AS person_color,
-
-    -- Group (for group goals)
-    gr.id AS group_id,
-    gr.name AS group_name,
-    gr.color AS group_color,
-
-    -- Progress calculations (Debit = money going towards goal = positive contribution)
-    COALESCE(SUM(t.amount), 0) AS current_amount,
-
-    -- Progress percentage
-    CASE
-        WHEN g.target_amount > 0 THEN
-            ROUND(COALESCE(SUM(t.amount), 0) / g.target_amount * 100, 2)
-        ELSE 0
-    END AS progress_percentage,
-
-    -- Remaining amount
-    GREATEST(0, g.target_amount - COALESCE(SUM(t.amount), 0)) AS remaining_amount,
-
-    -- Transaction count
-    COUNT(t.id) AS transaction_count,
-
-    -- Total contributed
-    COALESCE(SUM(t.amount), 0) AS total_contributed,
-
-    -- Days remaining
-    CASE
-        WHEN g.target_date IS NOT NULL THEN
-            GREATEST(0, g.target_date - CURRENT_DATE)
-        ELSE NULL
-    END AS days_remaining,
-
-    -- Is goal achieved
-    CASE
-        WHEN COALESCE(SUM(t.amount), 0) >= g.target_amount THEN TRUE
-        ELSE FALSE
-    END AS is_achieved
-
-FROM ss_goals g
-LEFT JOIN ss_users p ON g.user_id = p.id
-LEFT JOIN ss_groups gr ON g.group_id = gr.id
-LEFT JOIN ss_transactions t ON t.goal_id = g.id AND t.is_active = TRUE
-GROUP BY g.id, p.id, p.name, p.color, gr.id, gr.name, gr.color;
-
-
--- ============================================
--- VIEW 3: Group Details with Members
--- ============================================
-CREATE VIEW ss_v_groups AS
+-- 4. Canonical Account Balance View
+CREATE OR REPLACE VIEW v_fact_account_balances AS
 SELECT
-    g.id,
-    g.name,
-    g.description,
-    g.color,
-    g.is_active,
-    g.created_at,
-    g.updated_at,
+    user_id,
+    user_name,
+    bank_account_id,
+    account_number,
+    account_type,
+    SUM(signed_amount) AS current_balance
+FROM
+    v_fact_transactions
+GROUP BY
+    user_id, user_name, bank_account_id, account_number, account_type;
 
-    -- Member count
-    COUNT(gm.user_id) AS member_count,
-
-    -- Members list
-    array_agg(p.name ORDER BY gm.role, p.name) AS member_names,
-    array_agg(p.id ORDER BY gm.role, p.name) AS member_ids,
-    array_agg(gm.role ORDER BY gm.role, p.name) AS member_roles,
-
-    -- Goal stats for this group
-    (SELECT COUNT(*) FROM ss_goals gl WHERE gl.group_id = g.id) AS total_goals,
-    (SELECT COUNT(*) FROM ss_goals gl WHERE gl.group_id = g.id AND gl.status = 'active') AS active_goals
-
-FROM ss_groups g
-LEFT JOIN ss_group_members gm ON g.id = gm.group_id
-LEFT JOIN ss_users p ON gm.user_id = p.id
-GROUP BY g.id;
-
-
--- ============================================
--- VIEW 4: Person Summary with Stats
--- ============================================
-CREATE VIEW ss_v_persons AS
+-- 5. Monthly Financial Summary View
+CREATE OR REPLACE VIEW v_monthly_financial_summary AS
 SELECT
-    p.id,
-    p.name,
-    p.email,
-    p.relationship,
-    p.color,
-    p.is_active,
-    p.created_at,
+    DATE_TRUNC('month', transaction_date) :: date AS month,
+    user_id,
+    user_name,
+    SUM(CASE WHEN transaction_type = 'Credit' THEN amount ELSE 0 END) AS income,
+    SUM(CASE WHEN transaction_type = 'Debit' THEN amount ELSE 0 END) AS expense,
+    SUM(signed_amount) AS net_cashflow
+FROM
+    v_fact_transactions
+GROUP BY
+    month, user_id, user_name;
 
-    -- Transaction stats
-    COUNT(DISTINCT t.id) AS total_transactions,
-
-    COALESCE(SUM(
-        CASE WHEN tt.name IN ('credit', 'Credit') THEN t.amount ELSE 0 END
-    ), 0) AS total_credits,
-
-    COALESCE(SUM(
-        CASE WHEN tt.name IN ('debit', 'Debit') THEN t.amount ELSE 0 END
-    ), 0) AS total_debits,
-
-    COALESCE(SUM(
-        CASE
-            WHEN tt.name IN ('credit', 'Credit') THEN t.amount
-            WHEN tt.name IN ('debit', 'Debit') THEN -t.amount
-            ELSE 0
-        END
-    ), 0) AS net_balance,
-
-    -- Goal stats
-    (SELECT COUNT(*) FROM ss_goals g WHERE g.user_id = p.id) AS individual_goals,
-
-    -- Group memberships
-    (SELECT COUNT(*) FROM ss_group_members gm WHERE gm.user_id = p.id) AS group_memberships
-
-FROM ss_users p
-LEFT JOIN ss_transactions t ON p.id = t.user_id AND t.is_active = TRUE
-LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
-GROUP BY p.id;
-
-
--- ============================================
--- VIEW 5: Monthly Summary
--- ============================================
-CREATE VIEW ss_v_monthly_summary AS
+-- 6. Rule Application Audit View
+-- (Fixed: joined to ss_categorization_rules)
+CREATE OR REPLACE VIEW v_rule_application_audit AS
 SELECT
-    DATE_TRUNC('month', t.transaction_date)::DATE AS month,
-    p.id AS user_id,
-    p.name AS person_name,
+    t.transaction_id,
+    t.transaction_date,
+    t.amount,
+    t.transaction_type,
+    r.id AS rule_id,
+    r.name AS rule_name,
+    t.category_id,
+    t.category_name
+FROM
+    v_fact_transactions t
+    INNER JOIN ss_categorization_rules r ON r.id = (SELECT rule_id FROM ss_transactions WHERE id = t.transaction_id);
 
-    -- Category breakdown
-    c.id AS category_id,
-    c.name AS category_name,
-    c.color AS category_color,
-
-    -- Type breakdown
-    tt.name AS type_name,
-
-    -- Aggregations
-    COUNT(*) AS transaction_count,
-    SUM(t.amount) AS total_amount,
-    AVG(t.amount) AS avg_amount,
-    MIN(t.amount) AS min_amount,
-    MAX(t.amount) AS max_amount
-
-FROM ss_transactions t
-JOIN ss_users p ON t.user_id = p.id
-LEFT JOIN ss_categories c ON t.category_id = c.id
-LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
-WHERE t.is_active = TRUE
-GROUP BY DATE_TRUNC('month', t.transaction_date),
-         p.id, p.name, c.id, c.name, c.color, tt.name
-ORDER BY month DESC, p.name, c.name;
-
-
--- ============================================
--- VIEW 6: Category-wise Summary
--- ============================================
-CREATE VIEW ss_v_category_summary AS
+-- 7. Daily Cashflow Summary View
+CREATE OR REPLACE VIEW v_fact_daily_cashflow AS
 SELECT
-    c.id AS category_id,
-    c.name AS category_name,
-    c.type AS category_type,
-    c.color AS category_color,
+    transaction_date,
+    user_id,
+    user_name,
+    SUM(CASE WHEN transaction_type = 'Credit' THEN amount ELSE 0 END) AS daily_income,
+    SUM(CASE WHEN transaction_type = 'Debit' THEN amount ELSE 0 END) AS daily_expense,
+    SUM(signed_amount) AS daily_net_amount
+FROM
+    v_fact_transactions
+GROUP BY
+    transaction_date, user_id, user_name;
 
-    COUNT(t.id) AS transaction_count,
-    COALESCE(SUM(t.amount), 0) AS total_amount,
-    COALESCE(AVG(t.amount), 0) AS avg_amount,
-
-    -- By type breakdown
-    COALESCE(SUM(CASE WHEN tt.name IN ('credit', 'Credit') THEN t.amount ELSE 0 END), 0) AS credit_amount,
-    COALESCE(SUM(CASE WHEN tt.name IN ('debit', 'Debit') THEN t.amount ELSE 0 END), 0) AS debit_amount,
-
-    -- Recent activity
-    MAX(t.transaction_date) AS last_transaction_date
-
-FROM ss_categories c
-LEFT JOIN ss_transactions t ON c.id = t.category_id AND t.is_active = TRUE
-LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
-WHERE c.is_active = TRUE
-GROUP BY c.id, c.name, c.type, c.color
-ORDER BY total_amount DESC;
-
-
--- ============================================
--- VIEW 7: Payment Method Summary
--- ============================================
-CREATE VIEW ss_v_payment_method_summary AS
+-- 8. Category-wise Monthly Expense View
+CREATE OR REPLACE VIEW v_fact_category_monthly AS
 SELECT
-    pm.id,
-    pm.type,
-    pm.name,
-    pm.account_number,
-    pm.bank_name,
-    pm.color,
-    pm.is_active,
+    DATE_TRUNC('month', transaction_date) :: date AS month,
+    user_id,
+    user_name,
+    category_id,
+    category_name,
+    SUM(amount) AS total_amount
+FROM
+    v_fact_transactions
+WHERE
+    transaction_type = 'Debit'
+GROUP BY
+    month, user_id, user_name, category_id, category_name;
 
-    COUNT(t.id) AS transaction_count,
-    COALESCE(SUM(t.amount), 0) AS total_amount,
-
-    COALESCE(SUM(CASE WHEN tt.name IN ('credit', 'Credit') THEN t.amount ELSE 0 END), 0) AS total_credits,
-    COALESCE(SUM(CASE WHEN tt.name IN ('debit', 'Debit') THEN t.amount ELSE 0 END), 0) AS total_debits,
-
-    MAX(t.transaction_date) AS last_used
-
-FROM ss_payment_methods pm
-LEFT JOIN ss_transactions t ON pm.id = t.payment_method_id AND t.is_active = TRUE
-LEFT JOIN ss_transaction_types tt ON t.type_id = tt.id
-GROUP BY pm.id
-ORDER BY transaction_count DESC;
-
-
--- ============================================
--- VIEW 8: Tag Usage Summary
--- ============================================
-CREATE VIEW ss_v_tag_summary AS
+-- 9. Bank Health Summary View
+CREATE OR REPLACE VIEW v_fact_bank_health AS
 SELECT
-    tg.id,
-    tg.name,
-    tg.color,
-    tg.is_active,
+    user_id,
+    user_name,
+    account_type,
+    COUNT(DISTINCT bank_account_id) AS total_accounts,
+    SUM(signed_amount) AS total_balance
+FROM
+    v_fact_transactions
+GROUP BY
+    user_id, user_name, account_type;
 
-    COUNT(ttg.transaction_id) AS usage_count,
+-- 10. Unclassified Transactions View
+CREATE OR REPLACE VIEW v_fact_unclassified_transactions AS
+SELECT
+    transaction_id,
+    transaction_date,
+    user_id,
+    user_name,
+    account_number,
+    amount,
+    transaction_type,
+    description
+FROM
+    v_fact_transactions
+WHERE
+    category_id IS NULL;
 
-    COALESCE(SUM(t.amount), 0) AS total_amount,
-
-    MAX(t.transaction_date) AS last_used
-
-FROM ss_tags tg
-LEFT JOIN ss_tags ttg ON tg.id = ttg.tag_id
-LEFT JOIN ss_transactions t ON ttg.transaction_id = t.id AND t.is_active = TRUE
-WHERE tg.is_active = TRUE
-GROUP BY tg.id
-ORDER BY usage_count DESC;
-
-
--- ============================================
--- VIEW 9: Recent Transactions (Last 30 days)
--- ============================================
-CREATE VIEW ss_v_recent_transactions AS
-SELECT * FROM ss_v_transactions
-WHERE transaction_date >= CURRENT_DATE - INTERVAL '30 days'
-  AND is_active = TRUE
-ORDER BY transaction_date DESC, created_at DESC;
-
-
--- ============================================
--- VIEW 10: Active Goals Dashboard
--- ============================================
-CREATE VIEW ss_v_active_goals AS
-SELECT * FROM ss_v_goals
-WHERE status = 'active'
-ORDER BY
-    CASE WHEN days_remaining IS NOT NULL THEN days_remaining ELSE 999999 END,
-    progress_percentage DESC;
-
-
--- All transactions with full details
-SELECT * FROM ss_v_transactions WHERE is_active = TRUE ORDER BY transaction_date DESC;
-
--- Goal progress
-SELECT name, target_amount, current_amount, progress_percentage, days_remaining
-FROM ss_v_active_goals;
-
--- Monthly expense breakdown
-SELECT month, category_name, total_amount
-FROM ss_v_monthly_summary
-WHERE type_name = 'Debit'
-ORDER BY month DESC, total_amount DESC;
-
--- Person's net balance
-SELECT name, total_credits, total_debits, net_balance FROM ss_v_persons;
-
--- Most used payment methods
-SELECT name, bank_name, transaction_count, total_amount FROM ss_v_payment_method_summary;
+-- 11. Rule Coverage Summary View
+CREATE OR REPLACE VIEW v_fact_rule_coverage AS
+SELECT
+    user_id,
+    user_name,
+    COUNT(*) AS total_transactions,
+    COUNT(CASE WHEN transaction_id IN (SELECT id FROM ss_transactions WHERE category_id IS NOT NULL) THEN 1 END) AS rule_matched_transactions,
+    COUNT(*) - COUNT(CASE WHEN transaction_id IN (SELECT id FROM ss_transactions WHERE category_id IS NOT NULL) THEN 1 END) AS unmatched_transactions,
+    ROUND(
+        COUNT(CASE WHEN transaction_id IN (SELECT id FROM ss_transactions WHERE category_id IS NOT NULL) THEN 1 END) :: numeric / COUNT(*) * 100,
+        2
+    ) AS rule_coverage_percent
+FROM
+    v_fact_transactions
+GROUP BY
+    user_id, user_name;

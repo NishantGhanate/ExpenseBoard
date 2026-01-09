@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    result = parse_statement(pdf_path=args.input, bank_name=BankName.KOTAK)
+    result = parse_statement(pdf_path=args.input, bank_name=BankName.UNION)
     
     print(len(result["transactions"]))
 

@@ -81,7 +81,7 @@ def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_ema
         FROM ss_categorization_rules
         WHERE user_id = %s
           AND is_active = true
-          AND (bank_account_id IS NULL OR bank_account_id = %s)
+          AND (bank_account_id = %s OR bank_account_id IS NULL)
         """,
         (user_obj["id"], account_details["id"]),
     )

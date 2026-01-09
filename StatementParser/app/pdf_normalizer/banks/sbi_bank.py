@@ -1,5 +1,8 @@
 import copy
+from curses import raw
 import re
+
+
 
 from app.pdf_normalizer.parsers.base_parser import BankStatementParser
 from app.pdf_normalizer.parsers.base_parsing_rules import DateAmountRule
@@ -117,11 +120,25 @@ class SBIBankParser(BankStatementParser):
         unique = []
 
         for row in rows:
+            raw = str(row[0])
+
+            date_match = re.search(r"\d{2}-\d{2}-\d{2}", raw)
+            if not date_match:
+                continue
+
+            transaction_date = parse_date(date_match.group())
+
+            
+            matched = False
+
+            
+        
             for rule in self.rules:
                 is_match, index = rule.match(row)
                 if not is_match:
                     continue
-
+                
+                matched = True
                 template = copy.deepcopy(ss_transactions_template())
 
                 # Date
@@ -145,8 +162,8 @@ class SBIBankParser(BankStatementParser):
                 template["reference_id"] = ref_match.group(2) if ref_match else None
 
                 # Amount & type
-                credit = row[-3] if len(row) >= 3 else ""
-                debit = row[-2] if len(row) >= 2 else ""
+                credit = row[3] if len(row) > 3 else ""
+                debit = row[4] if len(row) > 4 else ""
 
                 amount_source = credit if credit and credit != "-" else debit
                 template["amount"] = parse_amount(amount_source)
@@ -163,6 +180,7 @@ class SBIBankParser(BankStatementParser):
                 key = (
                     template["transaction_date"],
                     template["amount"],
+                    template["type"],
                     template["description"],
                     template.get("reference_id"),
                 )
@@ -170,5 +188,49 @@ class SBIBankParser(BankStatementParser):
                 if key not in seen:
                     seen.add(key)
                     unique.append(template)
+            
+            if not matched:
+                template = copy.deepcopy(ss_transactions_template())
+                template["transaction_date"] = transaction_date
+
+                raw_desc = " ".join(str(x) for x in row if x)
+
+                # 1. Clean description (UPI only)
+                upi_match = re.search(r"(UPI/(CR|DR)/\d+/.+?/UPI)", raw_desc)
+                clean_desc = upi_match.group(1) if upi_match else raw_desc
+                template["description"] = clean_desc
+
+                # 2. Transaction type (SOURCE OF TRUTH)
+                if "/DR/" in clean_desc:
+                    template["type"] = "debit"
+                elif "/CR/" in clean_desc:
+                    template["type"] = "credit"
+                else:
+                    template["type"] = None
+
+                # 3. Amount (second-last decimal rule)
+                numbers = re.findall(r"\d+\.\d{2}", raw_desc)
+                template["amount"] = numbers[-2] if len(numbers) >= 2 else None
+
+                # 4. Payment method
+                template["payment_method"] = "UPI"
+
+                # 5. Entity name (optional but correct)
+                name_match = re.search(r"UPI/(?:CR|DR)/\d+/([^/]+)/", clean_desc)
+                template["entity_name"] = name_match.group(1).strip() if name_match else None
+
+
+
+                key = (
+                    template["transaction_date"],
+                    template["amount"],
+                    template["type"],
+                    template["description"],
+                )
+
+                if key not in seen:
+                    seen.add(key)
+                    unique.append(template)
 
         return unique
+       

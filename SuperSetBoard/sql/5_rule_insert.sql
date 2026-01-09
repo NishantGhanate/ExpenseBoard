@@ -35,7 +35,7 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 -- Freelance Income (Wise, Skydo, etc.)
 ('Wise Income', 'rule "Wise Income" where description:regex:"WISE|NEFT.WISE PAYMENTS|ESCROW":i and type:eq:"credit":i assign category_id:2 type_id:1 priority 15;', 15, 1, TRUE),
 ('Skydo Income', 'rule "Skydo Income" where description:con:"SKYDO":i and type:eq:"credit":i assign category_id:2 type_id:1 priority 15;', 15, 1, TRUE),
-
+('Air Wallex', 'rule "AirWallex Income" where description:con:"AirWallex":i and type:eq:"credit":i assign category_id:2 type_id:1 priority 15;', 15, 1, TRUE),
 -- =============================================================================
 -- INVESTMENT RULES (Priority 15-25)
 -- =============================================================================

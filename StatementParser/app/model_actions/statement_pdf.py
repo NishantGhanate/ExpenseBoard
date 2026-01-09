@@ -62,13 +62,13 @@ def create_or_update_bank_pdf(
                     user_id,
                     sender_email,
                     filename,
-                    password_hash,
+                    encrypted_password,
                     is_active
                 )
                 VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (user_id, sender_email, filename)
                 DO UPDATE SET
-                    password_hash = EXCLUDED.password_hash,
+                    encrypted_password = EXCLUDED.encrypted_password,
                     is_active = EXCLUDED.is_active,
                     updated_at = NOW()
                 RETURNING *
@@ -103,7 +103,7 @@ def get_statement_pdf_password(
         with get_cursor() as cur:
             cur.execute(
                 """
-                SELECT password_hash
+                SELECT encrypted_password
                 FROM ss_statement_pdfs
                 WHERE user_id = %s
                   AND sender_email = %s
@@ -119,7 +119,7 @@ def get_statement_pdf_password(
                 return None
 
             data = dict(row)
-            data["password"] = decrypt_password(data.pop("password_hash"))
+            data["password"] = decrypt_password(data.pop("encrypted_password"))
 
             logger.debug("No File found")
             return data

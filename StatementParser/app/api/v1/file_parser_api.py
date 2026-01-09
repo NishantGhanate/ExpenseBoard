@@ -1,8 +1,8 @@
 """
 Api for documents ingestion
 """
-
 import logging
+import uuid
 from datetime import date
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -25,7 +25,7 @@ CUSTOM_TEMP_DIR = Path("/app/temp/statements")
 CUSTOM_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 logger.debug(f"CUSTOM DIR = {CUSTOM_TEMP_DIR}")
 
-
+CUSTOM_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 class FileMeta(BaseModel):
     date: str | None = None
     subject: str | None = None
@@ -49,29 +49,24 @@ async def file_upload(
     try:
         logger.debug(f"Got meta : {from_email} {subject} {date}")
         size = 0
+        stem = Path(file.filename).stem
+        suffix = Path(file.filename).suffix
+        temp_path = CUSTOM_TEMP_DIR / f"{stem}_{uuid.uuid4().hex}{suffix}"
 
-        suffix = Path(file.filename).suffix or ""
-        temp_path = ""
 
-        logger.debug(f"Saving file to {CUSTOM_TEMP_DIR} / {file.filename}")
-        with NamedTemporaryFile(
-            delete=False,
-            suffix=suffix,
-            dir=str(CUSTOM_TEMP_DIR),
-        ) as tmp:
-
-            temp_path = tmp.name
-
+        with open(temp_path, "wb") as tmp:
             while chunk := await file.read(CHUNK):
                 size += len(chunk)
+
                 if size > MAX_SIZE_MB * 1024 * 1024:
-                    Path(temp_path).unlink(missing_ok=True)
+                    tmp.close()
+                    temp_path.unlink(missing_ok=True)
                     raise HTTPException(
                         status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                         detail=f"File too large. Max {MAX_SIZE_MB} MB",
                     )
 
-                tmp.write(chunk)  # accumulate the file
+                tmp.write(chunk)
 
             if size == 0:
                 raise HTTPException(
@@ -79,12 +74,15 @@ async def file_upload(
                     detail="Uploaded file is empty.",
                 )
 
+
+        await file.close()
+
         # # content = await file.read()  # simple read op
         # # step 1: save the file
         task_obj = process_bank_pdf.apply_async(
             kwargs = {
                 'filename': file.filename,
-                'file_path': temp_path,
+                'file_path': str(temp_path),
                 'from_email': from_email,
                 'to_email' : to_email
             },

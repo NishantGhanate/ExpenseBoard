@@ -33,7 +33,7 @@ logger = logging.getLogger("app")
     name="app.tasks.bank_statement_upload.process_bank_pdf",
     queue="statement_parser",
 )
-def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_email: str):
+def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_email: str):
     """
     This function binds logics togther.
     Gets bank name,
@@ -51,7 +51,7 @@ def process_bank_pdf(self,filename: str, file_path: str, from_email: str, to_ema
             filename=filename
         )
         if not password_dict:
-            raise Exception("Pdf file password not found! cannot process further")
+            raise Exception(f"Pdf file {filename} password not found! cannot process further")
 
         file_path = unlock_pdf(file_path=file_path, password=password_dict['password'])
 

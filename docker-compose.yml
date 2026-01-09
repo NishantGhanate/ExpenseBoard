@@ -162,6 +162,7 @@ services:
       CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
 
     volumes:
+      - ./StatementParser:/app # un safe comment this in actual prod
       - ./StatementParser/files:/app/files
       - ./StatementParser/temp:/app/temp
 

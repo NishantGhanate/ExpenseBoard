@@ -159,10 +159,9 @@ CREATE TABLE ss_transactions (
     CONSTRAINT uq_transaction_amount_reference UNIQUE NULLS NOT DISTINCT (amount, reference_id, bank_account_id)
 );
 
--- Unique constraint: same user can't have duplicate reference_id
-CREATE UNIQUE INDEX uq_transaction_reference
-    ON ss_transactions (user_id, reference_id)
-    WHERE reference_id IS NOT NULL;
+-- Unique constraint: user_id index for faster lookups
+CREATE INDEX idx_ss_transactions_user_id
+    ON ss_transactions (user_id);
 
 -- Fallback unique for transactions without reference_id
 CREATE UNIQUE INDEX uq_transaction_no_reference

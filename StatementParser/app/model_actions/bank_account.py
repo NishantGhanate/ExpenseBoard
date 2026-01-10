@@ -30,20 +30,19 @@ def get_or_create_bank_account(
             logger.debug(f"Bank account {number} already exists")
             return dict(row), True
 
-        # 3. Create new with Savepoint protection
+        # 3.
         try:
-            with cursor.connection.savepoint():
-                cursor.execute(
-                    """
-                    INSERT INTO ss_bank_accounts (user_id, number, ifsc_code, type)
-                    VALUES (%s, %s, %s, %s)
-                    RETURNING *
-                    """,
-                    (user_id, number, ifsc_code, account_type)
-                )
-                logger.debug(f"Bank account {number} created")
-                new_row = cursor.fetchone()
-                return dict(new_row), True
+            cursor.execute(
+                """
+                INSERT INTO ss_bank_accounts (user_id, number, ifsc_code, type)
+                VALUES (%s, %s, %s, %s)
+                RETURNING *
+                """,
+                (user_id, number, ifsc_code, account_type)
+            )
+            logger.debug(f"Bank account {number} created")
+            new_row = cursor.fetchone()
+            return dict(new_row), True
         except Exception:
             # Fallback: If insert fails (e.g. race condition), try fetching once more
             cursor.execute("SELECT * FROM ss_bank_accounts WHERE number = %s", (number,))

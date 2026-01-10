@@ -26,28 +26,32 @@ def bulk_insert_transactions(
     for ext in extras:
         column_names.remove(ext)
 
-    if update:
-        remove_keys = ['reference_id']
-        for rmk in remove_keys:
-            column_names.remove(rmk)
+    # if update:
+    #     remove_keys = ['reference_id']
+    #     for rmk in remove_keys:
+    #         column_names.remove(rmk)
 
-        for tx in transactions:
-            for key in remove_keys:
-                tx.pop(key)
+    #     for tx in transactions:
+    #         for key in remove_keys:
+    #             tx.pop(key)
 
 
     try:
         columns_sql = ", ".join(column_names)
         values_sql = ", ".join(["%s"] * len(column_names))
 
-        update_cols = [col for col in column_names if col != "id"]
+        # We update everything EXCEPT the columns that make the row unique
+        # and the primary key itself.
+        unique_constraint_cols = {'user_id', 'amount', 'bank_account_id', 'reference_id', 'id'}
+        update_cols = [col for col in column_names if col not in unique_constraint_cols]
+
         set_clause = ", ".join(f"{col} = EXCLUDED.{col}" for col in update_cols)
 
         query = f"""
         INSERT INTO ss_transactions ({columns_sql})
         VALUES ({values_sql})
-        ON CONFLICT (id)
-        DO UPDATE SET {set_clause}
+        ON CONFLICT ON CONSTRAINT uq_transaction_reference
+        DO UPDATE SET {set_clause}, updated_at = CURRENT_TIMESTAMP
         """
 
         total_inserted = 0

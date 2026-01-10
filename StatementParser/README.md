@@ -66,7 +66,7 @@ $ echo "/mnt/d/Github/ExpenseBoard/StatementParser" > /mnt/d/Github/ExpenseBoard
 python -c "import sys; print('\n'.join(sys.path))"
 
 # Start the application
-uvicorn app.main:app --reload
+uvicorn main:app --reload --port 5000
 ```
 
 ## VISTI ME

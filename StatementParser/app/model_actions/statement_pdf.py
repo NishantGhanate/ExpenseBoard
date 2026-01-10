@@ -16,8 +16,8 @@ python ./app/model_actions/statement_pdf.py \
   --filename HDFC_Statement_Jun_2025.pdf
 
 """
-
 import logging
+import re
 
 from app.common.encryption import decrypt_password, encrypt_password
 from app.core.database import get_cursor
@@ -25,19 +25,7 @@ from app.core.database import get_cursor
 logger = logging.getLogger("app")
 
 
-# BANK_PATTERNS = {
-#     "hdfcbank.com": re.compile(r".*hdfc.*statement.*", re.I),
-#     "icicibank.com": re.compile(r".*icici.*statement.*", re.I),
-# }
 
-# def matches_bank(filename: str, sender_email: str) -> bool:
-#     domain = sender_email.split("@")[-1]
-#     pattern = BANK_PATTERNS.get(domain)
-
-#     if not pattern:
-#         return False
-
-#     return bool(pattern.search(normalize_filename(filename)))
 
 
 def create_or_update_bank_pdf(
@@ -100,6 +88,9 @@ def get_statement_pdf_password(
     """
 
     try:
+        suffix = filename[-8:]
+        file_pattern = rf"{re.escape(suffix)}$"
+
         with get_cursor() as cur:
             cur.execute(
                 """
@@ -107,11 +98,11 @@ def get_statement_pdf_password(
                 FROM ss_statement_pdfs
                 WHERE user_id = %s
                   AND sender_email = %s
-                  AND filename = %s
+                  AND filename ~ %s
                   AND is_active = TRUE
                 LIMIT 1
                 """,
-                (user_id, sender_email, filename)
+                (user_id, sender_email, file_pattern)
             )
 
             row = cur.fetchone()

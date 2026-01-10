@@ -9,7 +9,8 @@ logger = logging.getLogger(name="app")
 
 def bulk_insert_transactions(
     transactions: list[dict],
-    chunk_size: int = 30
+    chunk_size: int = 30,
+    update: bool = False
 ) -> dict[str, Any]:
     """
     Bulk insert with chunking and fallback to individual inserts on failure.
@@ -20,22 +21,34 @@ def bulk_insert_transactions(
     if not transactions:
         return {'inserted': 0, 'failed': 0, 'errors': []}
 
-    columns = list(ss_transactions_template().keys())
-
-    # Remove whats not required
+    column_names = list(ss_transactions_template().keys())
     extras = ['type', 'payment_method']
     for ext in extras:
-        columns.remove(ext)
+        column_names.remove(ext)
+
+    if update:
+        remove_keys = ['reference_id']
+        for rmk in remove_keys:
+            column_names.remove(rmk)
+
+        for tx in transactions:
+            for key in remove_keys:
+                tx.pop(key)
+
 
     try:
+        columns_sql = ", ".join(column_names)
+        values_sql = ", ".join(["%s"] * len(column_names))
 
-        query = """
-            INSERT INTO ss_transactions ({})
-            VALUES ({})
-        """.format(
-            ', '.join(columns),
-            ', '.join(['%s'] * len(columns))
-        )
+        update_cols = [col for col in column_names if col != "id"]
+        set_clause = ", ".join(f"{col} = EXCLUDED.{col}" for col in update_cols)
+
+        query = f"""
+        INSERT INTO ss_transactions ({columns_sql})
+        VALUES ({values_sql})
+        ON CONFLICT (id)
+        DO UPDATE SET {set_clause}
+        """
 
         total_inserted = 0
         total_failed = 0
@@ -44,19 +57,19 @@ def bulk_insert_transactions(
         # Process in chunks
         for i in range(0, len(transactions), chunk_size):
             chunk = transactions[i:i + chunk_size]
-            values = [tuple(t.get(col) for col in columns) for t in chunk]
+            values = [tuple(t.get(col) for col in column_names) for t in chunk]
 
             try:
                 with get_cursor() as cur:
                     cur.executemany(query, values)
-                    total_inserted += cur.rowcount
+                    total_inserted += len(chunk)
 
             except Exception as e:
                 logger.warning(f"Chunk {i // chunk_size + 1} failed: {e}. Falling back to individual inserts.")
 
                 # Fallback: insert one by one
                 for j, txn in enumerate(chunk):
-                    row = tuple(txn.get(col) for col in columns)
+                    row = tuple(txn.get(col) for col in column_names)
                     try:
                         with get_cursor() as cur:
                             cur.execute(query, row)

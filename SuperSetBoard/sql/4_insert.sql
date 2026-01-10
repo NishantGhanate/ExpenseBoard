@@ -36,7 +36,7 @@ INSERT INTO ss_tags (name, is_active, color) VALUES
 INSERT INTO ss_categories (name, type, color, is_active) VALUES
 ('Salary', 'INCOME', '#22C55E', TRUE),
 ('Freelance', 'INCOME', '#14B8A6', TRUE),
-('Investment', 'INCOME', '#3B82F6', TRUE),
+('Mutual Funds', 'INVESTMENT', '#3B82F6', TRUE),
 ('Term Insurance', 'EXPENSE', '#F97316', TRUE),
 ('Sbi Home Emi', 'EXPENSE', '#EF4444', TRUE),
 ('Utilities', 'EXPENSE', '#F59E0B', TRUE),
@@ -44,7 +44,10 @@ INSERT INTO ss_categories (name, type, color, is_active) VALUES
 ('Entertainment', 'EXPENSE', '#A855F7', TRUE),
 ('Healthcare', 'EXPENSE', '#EC4899', TRUE),
 ('Transfer', 'INCOME', '#6B7280', TRUE),
-('Health Insurance', 'EXPENSE', '#F97316', TRUE)
+('Health Insurance', 'EXPENSE', '#F97316', TRUE),
+('Bank Interest', 'INCOME', '#22C55E', TRUE),
+('Recurring Deposit', 'INVESTMENT', '#22C55E', TRUE),
+('Atm Withdraw', 'EXPENSE', '#22C55E', TRUE),
 ON CONFLICT (name) DO UPDATE SET
     type = EXCLUDED.type,
     color = EXCLUDED.color,
@@ -79,7 +82,7 @@ INSERT INTO ss_transaction_types (name, is_active, color) VALUES
 ('Credit', TRUE, '#22C55E'),
 ('Debit', TRUE, '#EF4444'),
 ('Transfer', TRUE, '#6B7280');
-
+('Bank Interest', TRUE, '#6B7280');
 -- ============================================
 -- 6. GROUPS
 -- ============================================

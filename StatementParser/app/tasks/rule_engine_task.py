@@ -7,7 +7,6 @@ Docstring for app.tasks.bank_statment_upload
 import logging
 from datetime import date
 
-from app.core.database import fetch_all, fetch_one
 from app.model_actions.transactions import bulk_insert_transactions
 from app.rule_engine.evaluator import TransactionCategorizer
 from app.rule_engine.parser import parse

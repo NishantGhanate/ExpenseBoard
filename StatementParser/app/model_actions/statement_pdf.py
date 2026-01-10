@@ -4,9 +4,60 @@ import re
 import sys
 
 from app.common.encryption import decrypt_password, encrypt_password
-from app.core.database import get_cursor  # Added get_pool for cleanup
+from app.core.database import get_cursor
 
 logger = logging.getLogger("app")
+
+def create_or_update_bank_pdf(
+    user_id: int,
+    sender_email: str,
+    filename: str,
+    pdf_password: str,
+    cur,
+    is_active: bool = True
+) -> dict:
+    """
+    Create or update bank PDF password rule.
+    Returns inserted/updated row.
+    """
+
+    encrypted_password = encrypt_password(pdf_password)
+
+    try:
+
+        cur.execute(
+            """
+            INSERT INTO ss_statement_pdfs (
+                user_id,
+                sender_email,
+                filename,
+                encrypted_password,
+                is_active
+            )
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (user_id, sender_email, filename)
+            DO UPDATE SET
+                encrypted_password = EXCLUDED.encrypted_password,
+                is_active = EXCLUDED.is_active,
+                updated_at = NOW()
+            RETURNING *
+            """,
+            (
+                user_id,
+                sender_email,
+                filename,
+                encrypted_password,
+                is_active
+            )
+        )
+
+        row = cur.fetchone()
+        logger.debug("Bank PDF rule created/updated")
+        return dict(row)
+
+    except Exception as ex:
+        logger.exception("Failed to create/update bank PDF rule")
+        raise ex
 
 def get_statement_pdf_password(
     user_id: int,

@@ -261,6 +261,7 @@ class RulesApp:
             self.transaction_types = fetch_transaction_types()
             self.goals = fetch_goals()
             self.users = fetch_users()
+
         except Exception as e:
             ui.notify(f"Error loading data: {e}", type="negative")
 
@@ -510,14 +511,15 @@ class RulesApp:
             ui.label('🏦 ExpenseBoard Rules Manager').classes('text-xl font-bold')
             ui.space()
             ui.label(f"Parser: {'Full' if USE_FULL_PARSER else 'Simple'}").classes('text-sm opacity-75')
-            with ui.row().classes('gap-4 items-center'):
-                ui.select(
-                    label='User',
-                    options={u['id']: u['name'] for u in self.users},
-                    value=self.current_user_id,
-                    on_change=lambda e: self.change_user(e.value)
-                ).props('dark dense').classes('w-40')
-                ui.button(icon='refresh', on_click=lambda: (self.load_data(), self.refresh_rules_list(), ui.notify("Refreshed"))).props('flat color=white')
+            user_options = {u['id']: u['name'] for u in self.users}
+
+            ui.select(
+                label='User',
+                options=user_options,
+                # Only set value if it actually exists in the options keys
+                value=self.current_user_id if self.current_user_id in user_options else None,
+                on_change=lambda e: self.change_user(e.value)
+            ).props('dark dense').classes('w-40')
 
         # Main content
         with ui.row().classes('w-full gap-4 p-4'):

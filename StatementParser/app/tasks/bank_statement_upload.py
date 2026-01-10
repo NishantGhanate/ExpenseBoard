@@ -105,6 +105,7 @@ def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_em
     stats = bulk_insert_transactions(transactions=applied_rule_tx)
     logger.info(f"Bulk insert stats = {stats}")
 
+    result['count'] = len(applied_rule_tx)
     result["transactions"] = applied_rule_tx
     return result
 

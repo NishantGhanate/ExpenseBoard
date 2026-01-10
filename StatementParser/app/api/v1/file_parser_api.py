@@ -2,16 +2,12 @@
 Api for documents ingestion
 """
 import logging
-import uuid
-from datetime import date
+import time
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 
 from app.api.v1 import PREFIX
-from app.common.file_util import temp_dir
 from app.tasks.bank_statement_upload import process_bank_pdf
-from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile,
-                     status)
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -21,11 +17,11 @@ file_upload_router = APIRouter(prefix=PREFIX)
 
 MAX_SIZE_MB = 200  # optional size limit
 CHUNK = 1024 * 1024 * 5  # 5 MB
-CUSTOM_TEMP_DIR = Path("/app/temp/statements")
+CUSTOM_TEMP_DIR = Path("./app/temp/statements")
 CUSTOM_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 logger.debug(f"CUSTOM DIR = {CUSTOM_TEMP_DIR}")
 
-CUSTOM_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
 class FileMeta(BaseModel):
     date: str | None = None
     subject: str | None = None
@@ -51,7 +47,7 @@ async def file_upload(
         size = 0
         stem = Path(file.filename).stem
         suffix = Path(file.filename).suffix
-        temp_path = CUSTOM_TEMP_DIR / f"{stem}_{uuid.uuid4().hex}{suffix}"
+        temp_path = CUSTOM_TEMP_DIR / f"{stem}_{time.time()}{suffix}"
 
 
         with open(temp_path, "wb") as tmp:

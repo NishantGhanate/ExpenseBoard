@@ -47,7 +47,7 @@ INSERT INTO ss_categories (name, type, color, is_active) VALUES
 ('Health Insurance', 'EXPENSE', '#F97316', TRUE),
 ('Bank Interest', 'INCOME', '#22C55E', TRUE),
 ('Recurring Deposit', 'INVESTMENT', '#22C55E', TRUE),
-('Atm Withdraw', 'EXPENSE', '#22C55E', TRUE),
+('Atm Withdraw', 'EXPENSE', '#22C55E', TRUE)
 ON CONFLICT (name) DO UPDATE SET
     type = EXCLUDED.type,
     color = EXCLUDED.color,
@@ -81,7 +81,7 @@ INSERT INTO ss_payment_methods (type, name, color, is_active) VALUES
 INSERT INTO ss_transaction_types (name, is_active, color) VALUES
 ('Credit', TRUE, '#22C55E'),
 ('Debit', TRUE, '#EF4444'),
-('Transfer', TRUE, '#6B7280');
+('Transfer', TRUE, '#6B7280'),
 ('Bank Interest', TRUE, '#6B7280');
 -- ============================================
 -- 6. GROUPS

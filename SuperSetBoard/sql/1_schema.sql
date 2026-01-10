@@ -113,7 +113,7 @@ CREATE TABLE ss_goals (
 CREATE TABLE ss_transactions (
     id SERIAL PRIMARY KEY,
     entity_name VARCHAR(200),
-    transaction_date DATETIME NOT NULL,
+    transaction_date TIMESTAMPTZ NOT NULL,
     user_id INTEGER NOT NULL REFERENCES ss_users(id) ON DELETE CASCADE,
     bank_account_id INTEGER NOT NULL REFERENCES ss_bank_accounts(id) ON DELETE RESTRICT,
     type_id INTEGER NOT NULL REFERENCES ss_transaction_types(id) ON DELETE RESTRICT,

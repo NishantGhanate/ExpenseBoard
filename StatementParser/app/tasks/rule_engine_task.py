@@ -93,7 +93,8 @@ def run_rule_engine(user_email: str, bank_account_id: int, from_date: date, to_d
 
     applied_rule_tx = categorizer.categorize_batch(transactions)
 
-    stats = bulk_insert_transactions(transactions=applied_rule_tx)
+    stats = bulk_insert_transactions(transactions=applied_rule_tx, update=True)
+
     logger.info(f"Bulk insert stats = {stats}")
 
     result['count'] = len(applied_rule_tx)

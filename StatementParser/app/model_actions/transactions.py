@@ -9,7 +9,8 @@ logger = logging.getLogger(name="app")
 
 def bulk_insert_transactions(
     transactions: list[dict],
-    chunk_size: int = 30
+    chunk_size: int = 30,
+    update: bool = False
 ) -> dict[str, Any]:
     """
     Bulk insert with chunking and fallback to individual inserts on failure.
@@ -24,6 +25,16 @@ def bulk_insert_transactions(
     extras = ['type', 'payment_method']
     for ext in extras:
         column_names.remove(ext)
+
+    if update:
+        remove_keys = ['reference_id']
+        for rmk in remove_keys:
+            column_names.remove(rmk)
+
+        for tx in transactions:
+            for key in remove_keys:
+                tx.pop(key)
+
 
     try:
         columns_sql = ", ".join(column_names)

@@ -78,7 +78,7 @@ def create_or_update_bank_pdf(
         logger.exception("Failed to create/update bank PDF rule")
         raise ex
 
-def get_statement_pdf_password(
+def    get_statement_pdf_password(
     user_id: int,
     sender_email: str,
     filename: str

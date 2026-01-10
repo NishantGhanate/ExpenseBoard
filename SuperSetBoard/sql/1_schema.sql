@@ -113,7 +113,7 @@ CREATE TABLE ss_goals (
 CREATE TABLE ss_transactions (
     id SERIAL PRIMARY KEY,
     entity_name VARCHAR(200),
-    transaction_date DATETIME NOT NULL,
+    transaction_date TIMESTAMPTZ NOT NULL,
     user_id INTEGER NOT NULL REFERENCES ss_users(id) ON DELETE CASCADE,
     bank_account_id INTEGER NOT NULL REFERENCES ss_bank_accounts(id) ON DELETE RESTRICT,
     type_id INTEGER NOT NULL REFERENCES ss_transaction_types(id) ON DELETE RESTRICT,
@@ -159,3 +159,4 @@ WHERE reference_id IS NULL;
 
 -- Search performance for entity names
 CREATE INDEX idx_ss_txn_entity_name ON ss_transactions USING gin (entity_name gin_trgm_ops);
+COMMIT;

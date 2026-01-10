@@ -14,7 +14,7 @@ Docstring for app.tasks.bank_statment_upload
 
 import logging
 
-from app.core.database import fetch_all, fetch_one
+from app.core.database import get_cursor
 from app.model_actions.bank_account import get_or_create_bank_account
 from app.model_actions.statement_pdf import get_statement_pdf_password
 from app.model_actions.transactions import bulk_insert_transactions
@@ -28,77 +28,61 @@ from celery import shared_task
 logger = logging.getLogger("app")
 
 
-@shared_task(
-    bind=True,
-    name="app.tasks.bank_statement_upload.process_bank_pdf",
-    queue="statement_parser",
-)
+@shared_task(bind=True, name="app.tasks.bank_statement_upload.process_bank_pdf", queue="statement_parser")
 def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_email: str):
-    """
-    This function binds logics togther.
-    Gets bank name,
-    """
-    # call db and get user_id based on to_email from ss_users table
-    user_dict = fetch_one(
-        query="SELECT id FROM ss_users WHERE email = %s and is_active=true", params=(to_email,)
-    )
-    logger.debug(user_dict)
 
-    if is_pdf_password_protected(file_path= file_path):
-        password_dict = get_statement_pdf_password(
-            user_id=user_dict['id'],
-            sender_email=from_email,
-            filename=filename
+    # OPEN ONE CONNECTION FOR THE ENTIRE TASK
+    result = {}
+
+    with get_cursor() as cur:
+
+        # 1. Fetch User
+        cur.execute("SELECT id FROM ss_users WHERE email = %s AND is_active=true", (to_email,))
+        user_dict = cur.fetchone()
+        if not user_dict:
+            raise Exception(f"User {to_email} not found")
+
+        # 2. Handle Password
+        if is_pdf_password_protected(file_path=file_path):
+            # Ensure get_statement_pdf_password is updated to accept 'cur'
+            password_dict = get_statement_pdf_password(
+                user_id=user_dict['id'], sender_email=from_email, filename=filename, cur=cur
+            )
+            if not password_dict:
+                raise Exception("Password not found")
+            file_path = unlock_pdf(file_path=file_path, password=password_dict['password'])
+
+        # 3. Parse (CPU Bound)
+        bank_name = get_bank_from_email(email=from_email)
+        result = parse_statement(pdf_path=file_path, bank_name=bank_name)
+
+        # 4. Get/Create Account (Pass cur)
+        account_details, is_success = get_or_create_bank_account(
+            user_id=user_dict["id"],
+            number=result["account_details"].get("number"),
+            ifsc_code=result["account_details"].get("ifsc_code"),
+            cur=cur
         )
-        if not password_dict:
-            raise Exception(f"Pdf file {filename} password not found! cannot process further")
 
-        file_path = unlock_pdf(file_path=file_path, password=password_dict['password'])
+        # 5. Fetch Rules (ANY syntax for safety)
+        cur.execute("""
+            SELECT id, dsl_text FROM ss_categorization_rules
+            WHERE user_id = %s AND is_active = true
+            AND (bank_account_id IS NULL OR bank_account_id = %s)
+        """, (user_dict["id"], account_details["id"]))
+        dsl_rules = cur.fetchall()
 
-    bank_name = get_bank_from_email(email=from_email)
-    result = parse_statement(pdf_path=file_path, bank_name=bank_name)
+        # 6. Categorize (In-memory)
+        categorizer = TransactionCategorizer([parse(r["dsl_text"]) for r in dsl_rules])
+        applied_rule_tx = categorizer.categorize_batch(result["transactions"])
 
+        for tx in applied_rule_tx:
+            tx.update({"user_id": user_dict["id"], "bank_account_id": account_details["id"]})
 
-    account_details, is_success = get_or_create_bank_account(
-        user_id=user_dict["id"],
-        number=result["account_details"].get("number"),
-        ifsc_code=result["account_details"].get("ifsc_code"),
-        account_type=result["account_details"].get("type"),
-    )
+        # 7. Bulk Insert (Using the same open cursor)
+        stats = bulk_insert_transactions(transactions=applied_rule_tx, cur=cur)
 
-    if not is_success:
-        raise Exception("Could find account details to link transcations")
-
-    # 🔹 CLEAN BANK-AWARE RULE FETCH (NO ZIP, NO FILTERING LOGIC)
-    dsl_rules = fetch_all(
-        """
-        SELECT id, dsl_text
-        FROM ss_categorization_rules
-        WHERE user_id = %s
-          AND is_active = true
-          AND (bank_account_id IS NULL OR bank_account_id = %s)
-        """,
-        (user_dict["id"], account_details["id"]),
-    )
-    logger.debug(f"Total {len(dsl_rules)} rules fetched for {from_email}")
-
-    rules = []
-    for data in dsl_rules:
-        try:
-            rules.append(parse(data["dsl_text"]))
-        except Exception:
-            logger.exception(f"Failed to parse rule = {data}")
-
-    categorizer = TransactionCategorizer(rules)
-
-    applied_rule_tx = categorizer.categorize_batch(result["transactions"])
-
-    for data in applied_rule_tx:
-        data["user_id"] = user_dict["id"]
-        data["bank_account_id"] = account_details["id"]
-
-    stats = bulk_insert_transactions(transactions=applied_rule_tx)
-    logger.info(f"Bulk insert stats = {stats}")
+        logger.info(f"Task completed. Stats: {stats}")
 
     result['count'] = len(applied_rule_tx)
     result["transactions"] = applied_rule_tx

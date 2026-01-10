@@ -2,107 +2,84 @@ import logging
 from typing import Any
 
 from app.core.database import get_cursor
-from app.pdf_normalizer.utils import ss_transactions_template
 
 logger = logging.getLogger(name="app")
 
 
 def bulk_insert_transactions(
     transactions: list[dict],
-    chunk_size: int = 30,
-    update: bool = False
+    chunk_size: int = 50,
+    cur=None
 ) -> dict[str, Any]:
     """
-    Bulk insert with chunking and fallback to individual inserts on failure.
-
-    Returns:
-        dict with 'inserted', 'failed', 'errors' keys
+    Inserts transactions in bulk. If a bulk chunk fails,
+    it falls back to row-by-row insertion
     """
     if not transactions:
         return {'inserted': 0, 'failed': 0, 'errors': []}
 
-    column_names = list(ss_transactions_template().keys())
+    # 1. Prepare SQL Components
+    column_names = list(transactions[0].keys())
+
+    # DO NOT REMOVE:
     extras = ['type', 'payment_method']
     for ext in extras:
         column_names.remove(ext)
+    columns_sql = ", ".join(column_names)
+    values_sql = ", ".join(["%s"] * len(column_names))
 
-    # if update:
-    #     remove_keys = ['reference_id']
-    #     for rmk in remove_keys:
-    #         column_names.remove(rmk)
+    # Update everything except the unique reference and primary key
+    update_cols = [c for c in column_names if c not in ['id', 'reference_id', 'created_at']]
+    set_clause = ", ".join(f"{c} = EXCLUDED.{c}" for c in update_cols)
 
-    #     for tx in transactions:
-    #         for key in remove_keys:
-    #             tx.pop(key)
-
-
-    try:
-        columns_sql = ", ".join(column_names)
-        values_sql = ", ".join(["%s"] * len(column_names))
-
-        # We update everything EXCEPT the columns that make the row unique
-        # and the primary key itself.
-        unique_constraint_cols = {'user_id', 'amount', 'bank_account_id', 'reference_id', 'id'}
-        update_cols = [col for col in column_names if col not in unique_constraint_cols]
-
-        set_clause = ", ".join(f"{col} = EXCLUDED.{col}" for col in update_cols)
-
-        query = f"""
+    query = f"""
         INSERT INTO ss_transactions ({columns_sql})
         VALUES ({values_sql})
         ON CONFLICT ON CONSTRAINT uq_transaction_reference
         DO UPDATE SET {set_clause}, updated_at = CURRENT_TIMESTAMP
-        """
+    """
 
-        total_inserted = 0
-        total_failed = 0
-        errors = []
+    result = {'inserted': 0, 'failed': 0, 'errors': []}
 
-        # Process in chunks
+    def _process(cursor):
         for i in range(0, len(transactions), chunk_size):
-            chunk = transactions[i:i + chunk_size]
+            chunk = transactions[i : i + chunk_size]
             values = [tuple(t.get(col) for col in column_names) for t in chunk]
 
             try:
-                with get_cursor() as cur:
-                    cur.executemany(query, values)
-                    total_inserted += len(chunk)
+                # Try Bulk Insert
 
-            except Exception as e:
-                logger.warning(f"Chunk {i // chunk_size + 1} failed: {e}. Falling back to individual inserts.")
+                cursor.executemany(query, values)
+                result['inserted'] += len(chunk)
+            except Exception as bulk_ex:
+                logger.warning(f"Bulk chunk {i//chunk_size} failed. Error: {bulk_ex}. Falling back to row-wise.")
 
-                # Fallback: insert one by one
+                # Fallback: Row-by-row logic
                 for j, txn in enumerate(chunk):
-                    row = tuple(txn.get(col) for col in column_names)
+                    row_values = tuple(txn.get(col) for col in column_names)
                     try:
-                        with get_cursor() as cur:
-                            cur.execute(query, row)
-                            total_inserted += cur.rowcount
 
+                        cursor.execute(query, row_values)
+                        result['inserted'] += 1
                     except Exception as row_error:
-                        total_failed += 1
-                        error_info = {
+                        result['failed'] += 1
+                        result['errors'].append({
                             'index': i + j,
-                            'transaction': txn,
+                            'reference_id': txn.get('reference_id'),
                             'error': str(row_error)
-                        }
-                        errors.append(error_info)
-                        logger.error(f"Failed to insert transaction {i + j}: {row_error}")
-                        logger.debug(f"Transaction data: {txn}")
+                        })
+                        logger.error(f"Failed to insert row {i + j}: {row_error}")
 
-        result = {
-            'inserted': total_inserted,
-            'failed': total_failed,
-            'errors': errors
-        }
-
-        if errors:
-            logger.warning(f"Bulk insert completed: {total_inserted} inserted, {total_failed} failed")
+    # 2. Execution logic
+    try:
+        if cur:
+            _process(cur)
         else:
-            logger.info(f"Bulk insert completed: {total_inserted} inserted")
-
+            with get_cursor() as new_cur:
+                _process(new_cur)
     except Exception as ex:
-        logger.exception("Transactions Bulk insert failure")
+        # This only triggers if the connection itself dies, not just a row failure
+        logger.exception("Database connection failure during bulk insert")
         raise ex
 
     return result

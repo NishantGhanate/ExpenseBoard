@@ -3,38 +3,49 @@ Reusable PostgreSQL database module using psycopg3
 > pip install psycopg[binary,pool]
 > python ./app/core/database.py
 """
-
+import logging
 from contextlib import contextmanager
 from typing import Any, Generator
 
 import psycopg
-from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
-
 from app.config.settings import settings
+from psycopg.rows import dict_row
+from psycopg_pool import Check, ConnectionPool
+
+logger = logging.getLogger(name="app")
 
 # Connection pool (thread-safe, reuses connections)
 pool = ConnectionPool(
-    conninfo=settings.SQL_DATABASE_URL,  # postgresql://user:pass@host:port/db
-    min_size=5,
-    max_size=50,
-    timeout=10,
-    max_idle=300,  # close idle connections after 5 min
+    conninfo=settings.SQL_DATABASE_URL,
+    min_size=10,      # Increased minimum
+    max_size=80,      # Increased for high-concurrency Celery
+    timeout=30,      # Increased wait time for busy pools
+    max_idle=300,
+    check=Check.all([
+        Check.on_num_queries(100),
+        Check.is_ready()  # Ensures the connection is actually "alive" before giving it to a worker
+    ])
 )
 
 
 @contextmanager
 def get_connection() -> Generator[psycopg.Connection, None, None]:
     """Get a connection from the pool."""
-    conn = pool.getconn()
+    conn = None
     try:
+        conn = pool.getconn()
+        # Ensure the connection is still alive
         yield conn
-        conn.commit()
+        # Only commit if the connection hasn't been closed/broken
+        if not conn.closed:
+            conn.commit()
     except Exception:
-        conn.rollback()
+        if conn and not conn.closed:
+            conn.rollback()
         raise
     finally:
-        pool.putconn(conn)
+        if conn:
+            pool.putconn(conn)
 
 
 @contextmanager
@@ -88,8 +99,10 @@ def execute_returning(query: str, params: tuple | dict | None = None) -> dict | 
 
 
 def close_pool() -> None:
-    """Close all connections in the pool."""
-    pool.close()
+    """Close all connections in the pool gracefully."""
+    if pool:
+        logger.info("Closing database connection pool...")
+        pool.close(timeout=5.0)
 
 
 # --- Testing ---

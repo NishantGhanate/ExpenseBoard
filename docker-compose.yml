@@ -91,7 +91,7 @@ services:
   # Statement Parser API
   statement-parser-api:
     build: ./StatementParser
-    container_name: statement_parser_api
+    container_name: statement_parser_api  # for auto scaling remove this
     restart: unless-stopped
     env_file:
       - .env
@@ -108,6 +108,7 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
     volumes:
+      - ./StatementParser:/app
       - ./StatementParser/files:/app/files
       - ./StatementParser/temp:/app/temp
     depends_on:
@@ -137,6 +138,7 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
     volumes:
+      - ./StatementParser:/app
       - ./StatementParser/files:/app/files
       - ./StatementParser/temp:/app/temp
     depends_on:
@@ -162,6 +164,7 @@ services:
       CELERY_BACKEND_URL: ${CELERY_BACKEND_URL}
 
     volumes:
+      - ./StatementParser:/app # un safe comment this in actual prod
       - ./StatementParser/files:/app/files
       - ./StatementParser/temp:/app/temp
 

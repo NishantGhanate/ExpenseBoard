@@ -2,8 +2,8 @@
 import multiprocessing
 import os
 
-bind = f"0.0.0.0:{os.getenv('PORT', 8000)}"
-workers = int(os.getenv('GUNICORN_WORKERS', multiprocessing.cpu_count() * 2 + 1))
+bind = f"0.0.0.0:{os.getenv('PORT', 8001)}"
+workers = int(os.getenv('GUNICORN_WORKERS', 4))
 worker_class = "uvicorn.workers.UvicornWorker"
 
 accesslog = "-"

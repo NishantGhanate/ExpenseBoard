@@ -35,7 +35,7 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 -- Freelance Income (Wise, Skydo, etc.)
 ('Wise Income', 'rule "Wise Income" where description:regex:"WISE|NEFT.WISE PAYMENTS|ESCROW":i and type:eq:"credit":i assign category_id:2 type_id:1 priority 15;', 15, 1, TRUE),
 ('Skydo Income', 'rule "Skydo Income" where description:con:"SKYDO":i and type:eq:"credit":i assign category_id:2 type_id:1 priority 15;', 15, 1, TRUE),
-
+('Air Wallex', 'rule "AirWallex Income" where description:con:"AirWallex":i and type:eq:"credit":i assign category_id:2 type_id:1 priority 15;', 15, 1, TRUE),
 -- =============================================================================
 -- INVESTMENT RULES (Priority 15-25)
 -- =============================================================================
@@ -66,6 +66,8 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 -- TRANSFER RULES (Priority 50)
 -- =============================================================================
 ('Transfer - Self', 'rule "Transfer - Self" where description:regex:"NISHANT|SELF|OWN ACCOUNT|TRANSFER TO SELF":i assign category_id:10 type_id:3 priority 50;', 50, 1, TRUE),
+('Kotak Recurring Payment', ' rule "Kotak Bank RD" where description:con:"to RD":i assign payment_method_id:8  type_id: 3 category_id:13  priority 100;', 100, 1, TRUE);
+('Kotak Interest Payment', ' rule "Kotak Bank Interest" where description:sw:"Int.Pd":i assign payment_method_id:3  type_id: 4 priority 100;', 100, 1, TRUE);
 
 -- =============================================================================
 -- FAMILY TRANSFERS (Priority 10 - high priority to catch before generic transfers)

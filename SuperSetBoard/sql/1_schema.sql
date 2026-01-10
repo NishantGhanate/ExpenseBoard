@@ -2,6 +2,9 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
+-- 2. Set the time zone for the current database
+ALTER DATABASE superset SET timezone TO 'Asia/Kolkata';
+
 -- 1. Users Table
 CREATE TABLE ss_users (
     id SERIAL PRIMARY KEY,
@@ -110,7 +113,7 @@ CREATE TABLE ss_goals (
 CREATE TABLE ss_transactions (
     id SERIAL PRIMARY KEY,
     entity_name VARCHAR(200),
-    transaction_date DATE NOT NULL,
+    transaction_date DATETIME NOT NULL,
     user_id INTEGER NOT NULL REFERENCES ss_users(id) ON DELETE CASCADE,
     bank_account_id INTEGER NOT NULL REFERENCES ss_bank_accounts(id) ON DELETE RESTRICT,
     type_id INTEGER NOT NULL REFERENCES ss_transaction_types(id) ON DELETE RESTRICT,

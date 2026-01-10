@@ -66,6 +66,8 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 -- TRANSFER RULES (Priority 50)
 -- =============================================================================
 ('Transfer - Self', 'rule "Transfer - Self" where description:regex:"NISHANT|SELF|OWN ACCOUNT|TRANSFER TO SELF":i assign category_id:10 type_id:3 priority 50;', 50, 1, TRUE),
+('Kotak Recurring Payment', ' rule "Kotak Bank RD" where description:con:"to RD":i assign payment_method_id:8  type_id: 3 category_id:13  priority 100;', 100, 1, TRUE);
+('Kotak Interest Payment', ' rule "Kotak Bank Interest" where description:sw:"Int.Pd":i assign payment_method_id:3  type_id: 4 priority 100;', 100, 1, TRUE);
 
 -- =============================================================================
 -- FAMILY TRANSFERS (Priority 10 - high priority to catch before generic transfers)

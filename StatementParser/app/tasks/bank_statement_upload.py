@@ -58,14 +58,9 @@ def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_em
     bank_name = get_bank_from_email(email=from_email)
     result = parse_statement(pdf_path=file_path, bank_name=bank_name)
 
-    user_obj = fetch_one(
-        query="SELECT id FROM ss_users WHERE email = %s and is_active=true",
-        params=(to_email,),
-    )
-    logger.debug(user_obj)
 
     account_details, is_success = get_or_create_bank_account(
-        user_id=user_obj["id"],
+        user_id=user_dict["id"],
         number=result["account_details"].get("number"),
         ifsc_code=result["account_details"].get("ifsc_code"),
         account_type=result["account_details"].get("type"),
@@ -83,7 +78,7 @@ def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_em
           AND is_active = true
           AND (bank_account_id IS NULL OR bank_account_id = %s)
         """,
-        (user_obj["id"], account_details["id"]),
+        (user_dict["id"], account_details["id"]),
     )
     logger.debug(f"Total {len(dsl_rules)} rules fetched for {from_email}")
 
@@ -99,7 +94,7 @@ def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_em
     applied_rule_tx = categorizer.categorize_batch(result["transactions"])
 
     for data in applied_rule_tx:
-        data["user_id"] = user_obj["id"]
+        data["user_id"] = user_dict["id"]
         data["bank_account_id"] = account_details["id"]
 
     stats = bulk_insert_transactions(transactions=applied_rule_tx)

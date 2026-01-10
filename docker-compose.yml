@@ -91,7 +91,7 @@ services:
   # Statement Parser API
   statement-parser-api:
     build: ./StatementParser
-    container_name: statement_parser_api
+    container_name: statement_parser_api  # for auto scaling remove this
     restart: unless-stopped
     env_file:
       - .env

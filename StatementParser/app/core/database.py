@@ -3,7 +3,7 @@ Reusable PostgreSQL database module using psycopg3
 > pip install psycopg[binary,pool]
 > python ./app/core/database.py
 """
-
+import logging
 from contextlib import contextmanager
 from typing import Any, Generator
 
@@ -11,6 +11,8 @@ import psycopg
 from app.config.settings import settings
 from psycopg.rows import dict_row
 from psycopg_pool import Check, ConnectionPool
+
+logger = logging.getLogger(name="app")
 
 # Connection pool (thread-safe, reuses connections)
 pool = ConnectionPool(
@@ -24,6 +26,7 @@ pool = ConnectionPool(
         Check.is_ready()  # Ensures the connection is actually "alive" before giving it to a worker
     ])
 )
+
 
 @contextmanager
 def get_connection() -> Generator[psycopg.Connection, None, None]:
@@ -96,8 +99,10 @@ def execute_returning(query: str, params: tuple | dict | None = None) -> dict | 
 
 
 def close_pool() -> None:
-    """Close all connections in the pool."""
-    pool.close()
+    """Close all connections in the pool gracefully."""
+    if pool:
+        logger.info("Closing database connection pool...")
+        pool.close(timeout=5.0)
 
 
 # --- Testing ---

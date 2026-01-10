@@ -32,3 +32,5 @@ CREATE TABLE ss_statement_pdfs (
 CREATE INDEX idx_statement_pdfs_lookup
 ON ss_statement_pdfs (sender_email)
 WHERE is_active = TRUE;
+
+CREATE INDEX idx_filename_regex ON ss_statement_pdfs (filename text_pattern_ops);

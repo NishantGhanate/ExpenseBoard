@@ -9,7 +9,8 @@ logger = logging.getLogger(name="app")
 def bulk_insert_transactions(
     transactions: list[dict],
     chunk_size: int = 50,
-    cur=None
+    cur=None,
+    update=False
 ) -> dict[str, Any]:
     """
     Inserts transactions in bulk. If a bulk chunk fails,
@@ -24,12 +25,14 @@ def bulk_insert_transactions(
     # DO NOT REMOVE:
     extras = ['type', 'payment_method']
     for ext in extras:
-        column_names.remove(ext)
+        if ext in column_names:
+            column_names.remove(ext)
+
     columns_sql = ", ".join(column_names)
     values_sql = ", ".join(["%s"] * len(column_names))
 
     # Update everything except the unique reference and primary key
-    update_cols = [c for c in column_names if c not in ['id', 'reference_id', 'created_at']]
+    update_cols = [c for c in column_names if c not in ['id', 'reference_id', 'created_at', 'updated_at']]
     set_clause = ", ".join(f"{c} = EXCLUDED.{c}" for c in update_cols)
 
     query = f"""

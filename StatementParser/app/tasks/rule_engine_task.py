@@ -94,7 +94,7 @@ def run_rule_engine(
 
         # 5. Bulk Insert/Update (Using same cursor)
         # Note: bulk_insert_transactions uses ON CONFLICT ON CONSTRAINT
-        stats = bulk_insert_transactions(transactions=applied_rule_tx, cur=cursor)
+        stats = bulk_insert_transactions(transactions=applied_rule_tx, cur=cursor, update=True)
 
         logger.info(f"Rule engine bulk update stats = {stats}")
 

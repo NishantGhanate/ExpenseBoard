@@ -96,8 +96,9 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 
 ('Type - Sms  charges', 'rule "SMS Charges" where description:con:"Sms Charges","SMS Charges":i assign payment_method_id:8 category_id:17 priority 10;', 10, 1, TRUE),
 ('Type - UPI  charges', 'rule "RTNCG" where description:con:"RTNCG", "RTNCHG" :i assign payment_method_id:8 category_id:17 priority 10;', 10, 1, TRUE),
-('Type - Mobile Transfer', 'rule "Bank Transfer" where description:con:"MOBFT" :i assign payment_method_id:7 priority 10;', 10, 1, TRUE);
+('Type - Mobile Transfer', 'rule "Bank Transfer" where description:con:"MOBFT" :i assign payment_method_id:7 priority 10;', 10, 1, TRUE),
 
 
+('Type - Bank transfer', 'rule "Bank transfer" where description:regex:"Dr. Tran|Closure Proceeds":i assign payment_method_id:7 priority 10;', 10, 1, TRUE);
 
 COMMIT;

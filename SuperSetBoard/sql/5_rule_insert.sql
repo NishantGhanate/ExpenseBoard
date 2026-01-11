@@ -94,4 +94,10 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 ('Type - Debit Fallback', 'rule "Type - Debit Fallback" where type:eq:"debit":i or type_id:eq:"2" assign type_id:2 category_id:15 priority 200;', 200, 1, TRUE);
 
 
+('Type - Sms  charges', 'rule "SMS Charges" where description:con:"Sms Charges","SMS Charges":i assign payment_method_id:8 category_id:17 priority 10;', 10, 1, TRUE),
+('Type - UPI  charges', 'rule "RTNCG" where description:con:"RTNCG", "RTNCHG" :i assign payment_method_id:8 category_id:17 priority 10;', 10, 1, TRUE),
+('Type - Mobile Transfer', 'rule "Bank Transfer" where description:con:"MOBFT" :i assign payment_method_id:7 priority 10;', 10, 1, TRUE);
+
+
+
 COMMIT;

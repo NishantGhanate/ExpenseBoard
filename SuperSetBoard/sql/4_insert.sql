@@ -49,7 +49,8 @@ INSERT INTO ss_categories (name, type, color, is_active) VALUES
 ('Recurring Deposit', 'INVESTMENT', '#22C55E', TRUE),
 ('Atm Withdraw', 'EXPENSE', '#22C55E', TRUE),
 ('General expense', 'EXPENSE', '#22C55E', TRUE),
-('Other Income', 'INCOME', '#22C55E', TRUE)
+('Other Income', 'INCOME', '#22C55E', TRUE),
+('Charges', 'EXPENSE', '#22C55E', TRUE)
 
 ON CONFLICT (name) DO UPDATE SET
     type = EXCLUDED.type,

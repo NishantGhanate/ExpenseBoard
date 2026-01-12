@@ -10,7 +10,7 @@ from app.common.enums import BANK_EMAIL_PATTERNS, BankName
 def get_bank_identifier(pdf_path: str) -> str:
     """Read first two pages for bank detection and account details."""
     texts = []
-    
+
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages[:3]:
             text = page.extract_text()
@@ -20,13 +20,12 @@ def get_bank_identifier(pdf_path: str) -> str:
     return "\n".join(texts)
 
 
-
 def is_date_like(text: str) -> bool:
     """Check if text looks like a date."""
     if not text:
         return False
     # Matches formats like 01-11-25, 01/11/25, 01-11-2025, 16/05/2025
-    return bool(re.match(r'^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$', text.strip()))
+    return bool(re.match(r"^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$", text.strip()))
 
 
 def find_date_column(rows: list[list[str]]) -> int | None:
@@ -66,16 +65,22 @@ def extract_table_rows(pdf_path: str) -> list[list[str]]:
                     continue
 
                 expected_cols = len(data[0])
-                pending_row = None
+                pending_row = []
 
                 for row in data:
                     if not row or not any(cell and cell.strip() for cell in row):
                         continue
 
-                    cleaned = [cell.strip().replace('\n', ' ') if cell else "" for cell in row]
+                    cleaned = [
+                        cell.strip().replace("\n", " ") if cell else "" for cell in row
+                    ]
 
                     # Check if this is a complete row (has date)
-                    has_date = is_date_like(cleaned[date_col]) if date_col < len(cleaned) else False
+                    has_date = (
+                        is_date_like(cleaned[date_col])
+                        if date_col < len(cleaned)
+                        else False
+                    )
 
                     if has_date:
                         if pending_row:
@@ -113,21 +118,12 @@ def is_date_like(text: str) -> bool:
     if not text:
         return False
     text = text.strip()
-    return bool(re.match(r'^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$', text))
-
-def has_date_header(row: list[str]) -> int | None:
-    """Check if row has a 'Date' column header. Returns column index or None."""
-    if not row:
-        return None
-
-    for i, cell in enumerate(row):
-        if cell and "date" in cell.lower().strip():
-            return i
-
-    return None
+    return bool(re.match(r"^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$", text))
 
 
-def extract_table_rows(pdf_path: str) -> list[list[str]]:
+
+
+def extract_table_rows_v2(pdf_path: str) -> list[list[str]]:
     """Extract rows from tables that have a 'Date' column header."""
     all_rows = []
 
@@ -155,14 +151,20 @@ def extract_table_rows(pdf_path: str) -> list[list[str]]:
                 pending_row = None
 
                 # Process rows after header
-                for row in data[header_row_idx + 1:]:
+                for row in data[header_row_idx + 1 :]:
                     if not row or not any(cell and cell.strip() for cell in row):
                         continue
 
-                    cleaned = [cell.strip().replace('\n', ' ') if cell else "" for cell in row]
+                    cleaned = [
+                        cell.strip().replace("\n", " ") if cell else "" for cell in row
+                    ]
 
                     # Check if this is a data row (has date value in date column)
-                    has_date = is_date_like(cleaned[date_col]) if date_col < len(cleaned) else False
+                    has_date = (
+                        is_date_like(cleaned[date_col])
+                        if date_col < len(cleaned)
+                        else False
+                    )
 
                     if has_date:
                         if pending_row:
@@ -181,9 +183,6 @@ def extract_table_rows(pdf_path: str) -> list[list[str]]:
                     all_rows.append(pending_row)
 
     return all_rows
-
-
-
 
 
 def debug_tables(pdf_path: str):
@@ -217,7 +216,9 @@ def get_table_info(pdf_path: str):
                 if data:
                     num_cols = len(data[0])
                     num_rows = len(data)
-                    print(f"Page {page_num}, Table {i+1}: {num_rows} rows × {num_cols} cols")
+                    print(
+                        f"Page {page_num}, Table {i+1}: {num_rows} rows × {num_cols} cols"
+                    )
                     print(f"  Header: {data[0]}")
 
 
@@ -247,11 +248,8 @@ def _normalize_date(date_str: str) -> Optional[str]:
 
 
 def account_details_dict():
-    return {
-        'number' : None,
-        'ifsc_code' : None,
-        'type' : None
-    }
+    return {"number": None, "ifsc_code": None, "type": None}
+
 
 def ss_transactions_template(**kawrgs):
     """
@@ -260,28 +258,35 @@ def ss_transactions_template(**kawrgs):
     :param kwargs: Try to match the schema
     """
     return {
-        'entity_name': '',
-        'transaction_date': '',
-        'user_id': '',
-        'bank_account_id': None,
-        'type': '',
-        'type_id': None,  # Lookup from ss_transaction_types based on tx_type
-        'category_id': None,  # Needs categorization logic
-        'tag_id': None,
-        'payment_method_id': None,  # Could infer from UPI/NEFT/IMPS prefix
-        'payment_method': '',
-        'amount': '',
-        'currency': kawrgs.get('currency', 'INR'),
-        'goal_id': None,
-        'description': '',
-        'reference_id': None,
+        "entity_name": "",
+        "transaction_date": "",
+        "user_id": "",
+        "bank_account_id": None,
+        "type": "",
+        "type_id": None,  # Lookup from ss_transaction_types based on tx_type
+        "category_id": None,  # Needs categorization logic
+        "tag_id": None,
+        "payment_method_id": None,  # Could infer from UPI/NEFT/IMPS prefix
+        "payment_method": "",
+        "amount": "",
+        "currency": kawrgs.get("currency", "INR"),
+        "goal_id": None,
+        "description": "",
+        "reference_id": None,
     }
 
 
 def get_bank_from_email(email: str) -> BankName | None:
     """Determine bank from email address."""
     email = email.lower()
-    return next((bank for bank, pattern in BANK_EMAIL_PATTERNS.items() if re.search(pattern, email)), None)
+    return next(
+        (
+            bank
+            for bank, pattern in BANK_EMAIL_PATTERNS.items()
+            if re.search(pattern, email)
+        ),
+        None,
+    )
 
 
 if __name__ == "__main__":

@@ -7,7 +7,8 @@ PAYMENT_METHODS = {
     "RTNCHG": r"^RTNCHG",
     "ACH": r"^ACH",
     "CHEQUE": r"^(CHQ|CHEQUE|CLG)",
-    "ATM": r"ATM",
+    "ATM": r"\b(ATW|ATL)\b",
     "CARD": r"(VISA|MASTERCARD|RUPAY|DEBIT CARD|CREDIT CARD|POS)",
     "NETBANKING": r"(INB|NETBANKING|NET BANKING)",
+    "MOBILE_BANKING": r"\bMB\b",
 }

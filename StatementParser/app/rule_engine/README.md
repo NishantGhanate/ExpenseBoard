@@ -70,7 +70,7 @@ rule "Test" where field1:eq:"a" and field2:eq:"b" or field3:eq:"c" assign catego
 from transaction_categorizer import parse_rules, TransactionCategorizer
 from decimal import Decimal
 
-# Define rules
+# Define Simple rules
 rules_dsl = '''
 rule "Family Transfer" where entity_name:c:"KANTI":i assign category_id:1 priority 10;
 rule "UPI Payment" where description:s:"UPI/":i assign payment_method_id:1 priority 50;
@@ -135,19 +135,6 @@ for rule in matching_rules:
     print(f"- {rule.name} (priority: {rule.priority})")
 ```
 
-## Running Tests
-
-```bash
-cd D:\ActivePrime\Repo\lux
-pytest poc/transaction_categorizer/test_categorizer.py -v
-```
-
-## Running Examples
-
-```bash
-cd D:\ActivePrime\Repo\lux
-python -m poc.transaction_categorizer.example
-```
 
 ## Database Schema
 

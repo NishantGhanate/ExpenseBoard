@@ -1,3 +1,5 @@
+
+
 from pathlib import Path
 
 ALLOWED_EXCEL_EXTENSIONS = {".xlsx", ".xls", ".xlsm", ".xlsb", ".xltx", ".xlt"}
@@ -12,5 +14,5 @@ def is_excel_file(file_name: str) -> bool:
 
 
 def temp_dir():
-    return Path(__file__).resolve().parents[2]
+    return Path("/app")
 

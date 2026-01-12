@@ -25,3 +25,9 @@ for pg admin also the above ip instead of docker container name
 
 # windows & linux
 > sed -i 's/\r$//' .env
+
+
+ls -ld StatementParser/temp/statements
+
+docker exec -it statement_parser_api ls -l /app/temp/statements
+docker exec -it statement_parser_worker ls -l /app/temp/statements

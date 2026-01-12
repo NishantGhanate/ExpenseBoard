@@ -11,13 +11,12 @@ Set USE_DB=true to enable MSSQL result backend.
 
 import logging
 
-from celery import Celery
-from celery.backends.database.models import TaskExtended, TaskSet
-from celery.schedules import crontab
-from sqlalchemy import BigInteger, create_engine
-
 from app.config.settings import settings
 from app.core.celery_signal import BaseTaskSignal
+from celery import Celery
+# from celery.backends.database.models import TaskExtended, TaskSet
+from celery.schedules import crontab
+from celery.signals import worker_shutdown
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +26,6 @@ logger = logging.getLogger(__name__)
 #     )  # Remove Celery prefix for SQLAlchemy
 # )
 
-# # Monkey patching only for MSSQL & json result wont work.
-# # Mssql : https://github.com/celery/celery/issues/8634
-# # https://github.com/celery/celery/milestone/44
-# TaskExtended.__table__.c.id.type = BigInteger()
-# TaskSet.__table__.c.id.type = BigInteger()
-# TaskExtended.__table__.create(bind=engine, checkfirst=True)
-# TaskSet.__table__.create(bind=engine, checkfirst=True)
 
 
 # Initialize Celery
@@ -58,7 +50,7 @@ celery_app.conf.update(
 # Schedule example
 celery_app.conf.beat_schedule = {
     "daily-task": {
-        "task": "app.tasks.clean_up.cleanup_resources",
+        "task": "app.tasks.cleanup.cleanup_resources",
         "schedule": crontab(hour="9-21", day_of_week="1-5"),
     },
 }
@@ -76,3 +68,6 @@ def hello():
 def add(x, y):
     """Test function"""
     return x + y
+
+
+

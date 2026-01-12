@@ -29,14 +29,15 @@ Examples:
 
 from typing import List, Optional
 
-from .tokenizer import Tokenizer, Token, TokenType, TokenError
-from .ast_nodes import (
-    CategorizationRule, OrBlock, AndBlock, FilterExpression, Assignment,
-    EqualOperator, NotEqualOperator, GreaterThanOperator, LessThanOperator,
-    GreaterThanEqualOperator, LessThanEqualOperator, BetweenOperator,
-    ContainsOperator, NotContainsOperator, StartsWithOperator, EndsWithOperator,
-    RegexOperator, InOperator, NotInOperator, NullOperator, NotNullOperator
-)
+from .ast_nodes import (AndBlock, Assignment, BetweenOperator,
+                        CategorizationRule, ContainsOperator, EndsWithOperator,
+                        EqualOperator, FilterExpression,
+                        GreaterThanEqualOperator, GreaterThanOperator,
+                        InOperator, LessThanEqualOperator, LessThanOperator,
+                        NotContainsOperator, NotEqualOperator, NotInOperator,
+                        NotNullOperator, NullOperator, OrBlock, RegexOperator,
+                        StartsWithOperator)
+from .tokenizer import Token, TokenError, Tokenizer, TokenType
 
 
 class ParseError(Exception):
@@ -271,27 +272,48 @@ class Parser:
         return values
 
     def _parse_assignments(self) -> Assignment:
-        """Parse: category_id:N tag_id:N type_id:N payment_method_id:N goal_id:N"""
+        """Parse dynamic assignments: field_name:value [field_name:value ...]"""
         assignment = Assignment()
 
-        while self._current().type in (
-            TokenType.CATEGORY_ID, TokenType.TAG_ID,
-            TokenType.TYPE_ID, TokenType.PAYMENT_METHOD_ID, TokenType.GOAL_ID
-        ):
-            field_type = self._advance().type
-            self._expect(TokenType.COLON)
-            value = int(self._expect(TokenType.NUMBER).value)
+        while True:
+            current = self._current()
 
-            if field_type == TokenType.CATEGORY_ID:
-                assignment.category_id = value
-            elif field_type == TokenType.TAG_ID:
-                assignment.tag_id = value
-            elif field_type == TokenType.TYPE_ID:
-                assignment.type_id = value
-            elif field_type == TokenType.PAYMENT_METHOD_ID:
-                assignment.payment_method_id = value
-            elif field_type == TokenType.GOAL_ID:
-                assignment.goal_id = value
+            # Stop if we hit priority or semicolon (end of assignments)
+            if current.type in (TokenType.PRIORITY, TokenType.SEMICOLON, TokenType.EOF):
+                break
+
+            # Parse identifier-based assignments (field_name:value)
+            if current.type == TokenType.IDENTIFIER:
+                field_name = current.value
+                self._advance()
+
+                # Check if this is actually an assignment (followed by :)
+                if not self._peek(TokenType.COLON):
+                    # Not an assignment, put it back
+                    self.pos -= 1
+                    break
+
+                self._advance()  # consume :
+
+                # Parse value (can be number or string)
+                if self._peek(TokenType.NUMBER):
+                    value = int(self._expect(TokenType.NUMBER).value)
+                elif self._peek(TokenType.STRING):
+                    value = self._expect(TokenType.STRING).value
+                else:
+                    raise ParseError(
+                        f"Expected number or string for assignment value",
+                        self._current().position
+                    )
+
+                assignment.set(field_name, value)
+            else:
+                # No more assignments
+                break
+
+        # Ensure at least one assignment was made
+        if not assignment.fields:
+            raise ParseError("At least one assignment is required", self._current().position)
 
         return assignment
 

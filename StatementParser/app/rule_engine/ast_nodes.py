@@ -15,8 +15,7 @@ Example DSL:
 """
 
 from dataclasses import dataclass, field
-from typing import List, Union
-
+from typing import Any, Dict, List, Union
 
 # =============================================================================
 # FILTER OPERATORS
@@ -170,17 +169,80 @@ class OrBlock:
 
 
 # =============================================================================
-# ASSIGNMENT NODE
+# ASSIGNMENT NODE - NOW DYNAMIC
 # =============================================================================
 
 @dataclass
 class Assignment:
-    """What to assign when rule matches"""
-    category_id: int | None = None
-    tag_id: int | None = None
-    type_id: int | None = None
-    payment_method_id: int | None = None
-    goal_id:  int | None = None
+    """What to assign when rule matches - now supports dynamic fields"""
+    fields: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Ensure fields is a dictionary"""
+        if not isinstance(self.fields, dict):
+            raise ValueError("Assignment.fields must be a dictionary")
+
+    def get(self, field_name: str, default: Any = None) -> Any:
+        """Get a field value"""
+        return self.fields.get(field_name, default)
+
+    def set(self, field_name: str, value: Any) -> None:
+        """Set a field value"""
+        self.fields[field_name] = value
+
+    def has(self, field_name: str) -> bool:
+        """Check if field is set"""
+        return field_name in self.fields
+
+    def items(self):
+        """Iterate over field items"""
+        return self.fields.items()
+
+    # Backward compatibility properties
+    @property
+    def category_id(self) -> int | None:
+        return self.fields.get('category_id')
+
+    @category_id.setter
+    def category_id(self, value: int | None):
+        if value is not None:
+            self.fields['category_id'] = value
+
+    @property
+    def tag_id(self) -> int | None:
+        return self.fields.get('tag_id')
+
+    @tag_id.setter
+    def tag_id(self, value: int | None):
+        if value is not None:
+            self.fields['tag_id'] = value
+
+    @property
+    def type_id(self) -> int | None:
+        return self.fields.get('type_id')
+
+    @type_id.setter
+    def type_id(self, value: int | None):
+        if value is not None:
+            self.fields['type_id'] = value
+
+    @property
+    def payment_method_id(self) -> int | None:
+        return self.fields.get('payment_method_id')
+
+    @payment_method_id.setter
+    def payment_method_id(self, value: int | None):
+        if value is not None:
+            self.fields['payment_method_id'] = value
+
+    @property
+    def goal_id(self) -> int | None:
+        return self.fields.get('goal_id')
+
+    @goal_id.setter
+    def goal_id(self, value: int | None):
+        if value is not None:
+            self.fields['goal_id'] = value
 
 
 # =============================================================================

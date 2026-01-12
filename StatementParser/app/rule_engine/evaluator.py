@@ -1,20 +1,22 @@
 """
-Evaluator for Transaction Categorization Rules.
+Evaluator for Transaction Categorization Rules with Dynamic Assignment Support.
 
 Takes parsed AST and evaluates against transaction dictionaries.
+Now supports dynamic field assignment - any field can be assigned by rules.
 """
 
 import re
 from decimal import Decimal, InvalidOperation
-from typing import Dict, Any, List
+from typing import Any, Dict, List, Set
 
-from .ast_nodes import (
-    CategorizationRule, OrBlock, AndBlock, FilterExpression,
-    EqualOperator, NotEqualOperator, GreaterThanOperator, LessThanOperator,
-    GreaterThanEqualOperator, LessThanEqualOperator, BetweenOperator,
-    ContainsOperator, NotContainsOperator, StartsWithOperator, EndsWithOperator,
-    RegexOperator, InOperator, NotInOperator, NullOperator, NotNullOperator
-)
+from .ast_nodes import (AndBlock, BetweenOperator, CategorizationRule,
+                        ContainsOperator, EndsWithOperator, EqualOperator,
+                        FilterExpression, GreaterThanEqualOperator,
+                        GreaterThanOperator, InOperator, LessThanEqualOperator,
+                        LessThanOperator, NotContainsOperator,
+                        NotEqualOperator, NotInOperator, NotNullOperator,
+                        NullOperator, OrBlock, RegexOperator,
+                        StartsWithOperator)
 
 
 class RuleEvaluator:
@@ -161,7 +163,7 @@ class RuleEvaluator:
 
 
 class TransactionCategorizer:
-    """Applies multiple rules to categorize transactions."""
+    """Applies multiple rules to categorize transactions with dynamic field assignment."""
 
     def __init__(self, rules: List[CategorizationRule]):
         # Sort by priority (lower = higher priority)
@@ -172,41 +174,27 @@ class TransactionCategorizer:
         """
         Apply rules to transaction and return enriched transaction.
         First matching rule for each field wins.
+        Now supports any dynamic field from rule assignments.
         """
         result = transaction.copy()
 
         # Track which fields have been set
-        fields_set = {
-            'category_id': result.get('category_id') is not None,
-            'tag_id': result.get('tag_id') is not None,
-            'type_id': result.get('type_id') is not None,
-            'payment_method_id': result.get('payment_method_id') is not None,
-        }
+        fields_set: Set[str] = set()
+
+        # Mark fields that already have values in the transaction
+        for key, value in result.items():
+            if value is not None:
+                fields_set.add(key)
 
         for rule in self.rules:
-            # Skip if all fields already set
-            if all(fields_set.values()):
-                break
-
             if self.evaluator.evaluate_rule(rule, transaction):
                 # Apply assignments for fields not yet set
                 assignment = rule.assignment
 
-                if assignment.category_id is not None and not fields_set['category_id']:
-                    result['category_id'] = assignment.category_id
-                    fields_set['category_id'] = True
-
-                if assignment.tag_id is not None and not fields_set['tag_id']:
-                    result['tag_id'] = assignment.tag_id
-                    fields_set['tag_id'] = True
-
-                if assignment.type_id is not None and not fields_set['type_id']:
-                    result['type_id'] = assignment.type_id
-                    fields_set['type_id'] = True
-
-                if assignment.payment_method_id is not None and not fields_set['payment_method_id']:
-                    result['payment_method_id'] = assignment.payment_method_id
-                    fields_set['payment_method_id'] = True
+                for field_name, value in assignment.items():
+                    if value is not None and field_name not in fields_set:
+                        result[field_name] = value
+                        fields_set.add(field_name)
 
         return result
 
@@ -220,3 +208,10 @@ class TransactionCategorizer:
             rule for rule in self.rules
             if self.evaluator.evaluate_rule(rule, transaction)
         ]
+
+    def get_assignable_fields(self) -> Set[str]:
+        """Get all fields that can be assigned by the loaded rules."""
+        fields = set()
+        for rule in self.rules:
+            fields.update(rule.assignment.fields.keys())
+        return fields

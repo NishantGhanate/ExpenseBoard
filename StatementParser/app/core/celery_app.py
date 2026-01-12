@@ -13,7 +13,6 @@ import logging
 
 from app.config.settings import settings
 from app.core.celery_signal import BaseTaskSignal
-from app.core.database import close_pool
 from celery import Celery
 # from celery.backends.database.models import TaskExtended, TaskSet
 from celery.schedules import crontab
@@ -72,7 +71,3 @@ def add(x, y):
 
 
 
-@worker_shutdown.connect
-def on_worker_shutdown(sig, how, exitcode, **kwargs):
-    logger.info("Celery worker shutting down: Closing Postgres pool...")
-    close_pool()

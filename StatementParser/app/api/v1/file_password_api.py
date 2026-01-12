@@ -4,6 +4,7 @@ Api for documents pwd
 import logging
 
 from app.api.v1 import PREFIX
+from app.core.database import get_cursor
 from app.model_actions.statement_pdf import create_or_update_bank_pdf
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
@@ -35,13 +36,14 @@ async def file_upload_pwd(request_data: FileCredentialsRequest
     """
 
     try:
-
-        _ = create_or_update_bank_pdf(
-            user_id=request_data.user_id,
-            sender_email=request_data.sender_email,
-            filename=request_data.filename,
-            pdf_password=request_data.pdf_password,
-        )
+        with get_cursor() as curr:
+            _ = create_or_update_bank_pdf(
+                user_id=request_data.user_id,
+                sender_email=request_data.sender_email,
+                filename=request_data.filename,
+                pdf_password=request_data.pdf_password,
+                cur=curr
+            )
 
         return {
             "status": "success",

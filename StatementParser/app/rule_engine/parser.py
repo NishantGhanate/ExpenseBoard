@@ -29,14 +29,15 @@ Examples:
 
 from typing import List, Optional
 
-from .tokenizer import Tokenizer, Token, TokenType, TokenError
-from .ast_nodes import (
-    CategorizationRule, OrBlock, AndBlock, FilterExpression, Assignment,
-    EqualOperator, NotEqualOperator, GreaterThanOperator, LessThanOperator,
-    GreaterThanEqualOperator, LessThanEqualOperator, BetweenOperator,
-    ContainsOperator, NotContainsOperator, StartsWithOperator, EndsWithOperator,
-    RegexOperator, InOperator, NotInOperator, NullOperator, NotNullOperator
-)
+from .ast_nodes import (AndBlock, Assignment, BetweenOperator,
+                        CategorizationRule, ContainsOperator, EndsWithOperator,
+                        EqualOperator, FilterExpression,
+                        GreaterThanEqualOperator, GreaterThanOperator,
+                        InOperator, LessThanEqualOperator, LessThanOperator,
+                        NotContainsOperator, NotEqualOperator, NotInOperator,
+                        NotNullOperator, NullOperator, OrBlock, RegexOperator,
+                        StartsWithOperator)
+from .tokenizer import Token, TokenError, Tokenizer, TokenType
 
 
 class ParseError(Exception):
@@ -273,44 +274,27 @@ class Parser:
     def _parse_assignments(self) -> Assignment:
         """Parse dynamic assignments: field_name:value [field_name:value ...]"""
         assignment = Assignment()
-        
-        # Known assignment field token types for backward compatibility
-        known_field_types = {
-            TokenType.CATEGORY_ID: 'category_id',
-            TokenType.TAG_ID: 'tag_id',
-            TokenType.TYPE_ID: 'type_id',
-            TokenType.PAYMENT_METHOD_ID: 'payment_method_id',
-            TokenType.GOAL_ID: 'goal_id'
-        }
 
         while True:
             current = self._current()
-            
+
             # Stop if we hit priority or semicolon (end of assignments)
             if current.type in (TokenType.PRIORITY, TokenType.SEMICOLON, TokenType.EOF):
                 break
-            
-            # Check if it's a known field type token
-            if current.type in known_field_types:
-                field_name = known_field_types[current.type]
-                self._advance()
-                self._expect(TokenType.COLON)
-                value = int(self._expect(TokenType.NUMBER).value)
-                assignment.set(field_name, value)
-            
-            # Or it could be a custom field (identifier:number)
-            elif current.type == TokenType.IDENTIFIER:
+
+            # Parse identifier-based assignments (field_name:value)
+            if current.type == TokenType.IDENTIFIER:
                 field_name = current.value
                 self._advance()
-                
+
                 # Check if this is actually an assignment (followed by :)
                 if not self._peek(TokenType.COLON):
                     # Not an assignment, put it back
                     self.pos -= 1
                     break
-                
+
                 self._advance()  # consume :
-                
+
                 # Parse value (can be number or string)
                 if self._peek(TokenType.NUMBER):
                     value = int(self._expect(TokenType.NUMBER).value)
@@ -321,16 +305,16 @@ class Parser:
                         f"Expected number or string for assignment value",
                         self._current().position
                     )
-                
+
                 assignment.set(field_name, value)
             else:
                 # No more assignments
                 break
-        
+
         # Ensure at least one assignment was made
         if not assignment.fields:
             raise ParseError("At least one assignment is required", self._current().position)
-        
+
         return assignment
 
     # Helper methods

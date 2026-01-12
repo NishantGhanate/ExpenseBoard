@@ -6,6 +6,7 @@ from datetime import date
 from typing import List, Optional
 
 from app.api.v1 import PREFIX
+from app.core.database import get_cursor
 from app.tasks.rule_engine_task import run_rule_engine
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
@@ -37,9 +38,15 @@ async def rule_engine(request_data: RuleEnginePayload
     """
 
     try:
-        result = run_rule_engine(**request_data.model_dump())
+        # 1. Get a cursor from the pool
+        with get_cursor() as cur:
 
-        return result
+            request_params = request_data.model_dump()
+
+            # 3. Call the function passing the cursor
+            result = run_rule_engine(**request_params, cur=cur)
+
+            return result
 
     except Exception as e:
         logger.exception("Upload failed")

@@ -90,8 +90,15 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 -- =============================================================================
 -- FALLBACK TYPE RULES (Priority 200 - lowest priority, catch-all)
 -- =============================================================================
-('Type - Credit Fallback', 'rule "Type - Credit Fallback" where type:eq:"credit":i assign type_id:1 priority 200;', 200, 1, TRUE),
-('Type - Debit Fallback', 'rule "Type - Debit Fallback" where type:eq:"debit":i assign type_id:2 priority 200;', 200, 1, TRUE);
+('Type - Credit Fallback', 'rule "Type - Credit Fallback" where type:eq:"credit":i or type_id:eq:"1"  assign type_id:1 category_id:16 priority 200;', 200, 1, TRUE),
+('Type - Debit Fallback', 'rule "Type - Debit Fallback" where type:eq:"debit":i or type_id:eq:"2" assign type_id:2 category_id:15 priority 200;', 200, 1, TRUE);
 
+
+('Type - Sms  charges', 'rule "SMS Charges" where description:con:"Sms Charges","SMS Charges":i assign payment_method_id:8 category_id:17 priority 10;', 10, 1, TRUE),
+('Type - UPI  charges', 'rule "RTNCG" where description:con:"RTNCG", "RTNCHG" :i assign payment_method_id:8 category_id:17 priority 10;', 10, 1, TRUE),
+('Type - Mobile Transfer', 'rule "Bank Transfer" where description:con:"MOBFT" :i assign payment_method_id:7 priority 10;', 10, 1, TRUE),
+
+
+('Type - Bank transfer', 'rule "Bank transfer" where description:regex:"Dr. Tran|Closure Proceeds":i assign payment_method_id:7 priority 10;', 10, 1, TRUE);
 
 COMMIT;

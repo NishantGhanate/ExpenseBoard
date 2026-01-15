@@ -48,6 +48,10 @@ INSERT INTO ss_categories (name, type, color, is_active) VALUES
 ('Bank Interest', 'INCOME', '#22C55E', TRUE),
 ('Recurring Deposit', 'INVESTMENT', '#22C55E', TRUE),
 ('Atm Withdraw', 'EXPENSE', '#22C55E', TRUE),
+('General expense', 'EXPENSE', '#22C55E', TRUE),
+('Other Income', 'INCOME', '#22C55E', TRUE),
+('Charges', 'EXPENSE', '#22C55E', TRUE)
+
 ON CONFLICT (name) DO UPDATE SET
     type = EXCLUDED.type,
     color = EXCLUDED.color,
@@ -62,7 +66,7 @@ ON CONFLICT (name) DO UPDATE SET
 
 -- ============================================
 INSERT INTO ss_payment_methods (type, name, color, is_active) VALUES
-('UPI', 'Kotak UPI', '#FF0000', TRUE),
+('UPI', 'UPI', '#FF0000', TRUE),
 ('UPI', 'HDFC UPI', '#004C8F', TRUE),
 ('Net Banking', 'Kotak Net Banking', '#FF0000', TRUE),
 ('Net Banking', 'HDFC Net Banking', '#004C8F', TRUE),
@@ -81,7 +85,7 @@ INSERT INTO ss_payment_methods (type, name, color, is_active) VALUES
 INSERT INTO ss_transaction_types (name, is_active, color) VALUES
 ('Credit', TRUE, '#22C55E'),
 ('Debit', TRUE, '#EF4444'),
-('Transfer', TRUE, '#6B7280');
+('Transfer', TRUE, '#6B7280'),
 ('Bank Interest', TRUE, '#6B7280');
 -- ============================================
 -- 6. GROUPS

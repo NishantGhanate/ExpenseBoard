@@ -96,7 +96,7 @@ if __name__ == "__main__":
     parser.add_argument("--filename", required=False, help="Input PDF file name", default=None)
     parser.add_argument("--file_path", required=True, help="Input PDF file path")
     parser.add_argument("--from_email", required=True, help="email sender")
-    parser.add_argument("--to_email", required=True, help="email reciever")
+    parser.add_argument("--to_email", required=True, help="email")
     args = parser.parse_args()
 
     result = process_bank_pdf(

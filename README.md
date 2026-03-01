@@ -89,6 +89,10 @@ docker build --no-cache -t superset-custom .
 # Start all services
 docker-compose up -d
 
+
+> docker-compose restart rules-app
+
+
 # [OPTIONAL] Initialize database
 docker exec -it statement_parser_api python -m alembic upgrade head
 

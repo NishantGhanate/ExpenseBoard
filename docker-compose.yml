@@ -200,9 +200,9 @@ services:
       - shared_network
 
   # NiceGUI Rules App
-  rules-app:
+  statement-rules-app:
     build: ./StatementParser
-    container_name: rules_app
+    container_name: statement_parser_rules_app
     restart: unless-stopped
     env_file:
       - .env

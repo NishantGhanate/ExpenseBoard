@@ -200,7 +200,7 @@ services:
       - shared_network
 
   # NiceGUI Rules App
-  statement-rules-app:
+  statement-parser-rules-app:
     build: ./StatementParser
     container_name: statement_parser_rules_app
     restart: unless-stopped

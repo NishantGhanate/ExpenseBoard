@@ -29,6 +29,7 @@ Supports multiple Indian banks with automatic bank detection and transaction cat
 - **Task Queue:** Celery with Redis
 - **Database:** Shared PostgreSQL
 - **Containerization:** Docker
+- **Rules UI:** NiceGUI (port 8085)
 
 ## Installation
 
@@ -67,10 +68,15 @@ python -c "import sys; print('\n'.join(sys.path))"
 
 # Start the application
 uvicorn main:app --reload --port 5000
+
+# Run the Rules & Ledger UI locally
+python run_ui.py
+# then open http://localhost:8085
 ```
 
-## VISTI ME
-> http://localhost:8000/docs
+## Visit
+> API docs: http://localhost:8000/docs
+> Rules UI: http://localhost:8085
 
 ### Docker Setup
 ```bash
@@ -82,6 +88,9 @@ docker-compose up -d
 
 # View logs
 docker-compose logs -f
+
+# Rules UI is available at http://localhost:8085  (or $RULES_APP_PORT)
+# Health check: http://localhost:8085/healthz
 ```
 
 ## Configuration
@@ -100,6 +109,10 @@ CELERY_RESULT_BACKEND=redis://localhost:6379/0
 
 # API
 API_PORT=8000
+
+# Rules UI
+RULES_APP_PORT=8085
+NICEGUI_SECRET=expenseboard-secret-change-me
 ```
 
 ## Usage

@@ -1,14 +1,16 @@
 """
-Entrypoint for the NiceGUI Rules App in Docker.
+Entrypoint for the NiceGUI Rules App.
 
 Usage:
-    python run_ui.py
+    python run_ui.py                  # local dev
+    docker-compose up rules-app       # Docker
 
-Env vars (all optional, fall back to defaults):
+Env vars (all optional, sensible defaults for both local and Docker):
     RULES_APP_HOST      - bind host       (default: 0.0.0.0)
     RULES_APP_PORT      - bind port       (default: 8085)
-    RULES_APP_STORAGE   - NiceGUI storage path for persistent state (default: /app/ui_storage)
-    NICEGUI_SECRET      - cookie signing secret (default: expenseboard-secret-change-me)
+    RULES_APP_STORAGE   - NiceGUI storage path for persistent state
+                          (default: ./ui_storage locally, /app/ui_storage in Docker)
+    NICEGUI_SECRET      - cookie signing secret
 """
 
 import logging
@@ -16,22 +18,28 @@ import os
 import sys
 from pathlib import Path
 
-# ── App imports (after path is set) ──────────────────────────────────────────
+# ── 4. App imports (after sys.path is ready) ──────────────────────────────────
 from app.ui.app_logic import RulesApp  # noqa: E402
 from nicegui import app as nicegui_app  # noqa: E402
 from nicegui import ui
 
-# ── Ensure project root is on sys.path before any app.* imports ──────────────
+# ── 1. Path setup — must happen before any app.* imports ─────────────────────
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# ── Settings (read from env so Docker compose can override them) ─────────────
+# ── 2. Settings ───────────────────────────────────────────────────────────────
 HOST = os.getenv("RULES_APP_HOST", "0.0.0.0")
 PORT = int(os.getenv("RULES_APP_PORT", "8085"))
-STORAGE_PATH = Path(os.getenv("RULES_APP_STORAGE", "/app/ui_storage"))
+
+# Default storage: /app/ui_storage inside Docker, ./ui_storage locally
+_docker_path = "/app/ui_storage"
+_local_path  = str(ROOT / "ui_storage")
+_default_storage = _docker_path if Path("/app").is_dir() and os.access("/app", os.W_OK) else _local_path
+STORAGE_PATH = Path(os.getenv("RULES_APP_STORAGE", _default_storage))
 STORAGE_PATH.mkdir(parents=True, exist_ok=True)
 
+# ── 3. Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
@@ -48,22 +56,21 @@ def main() -> None:
     logger.info(f"  Storage  : {STORAGE_PATH}")
     logger.info("═" * 60)
 
-    # ── Persistent NiceGUI storage (survives container restarts) ─────────────
+    # Persistent NiceGUI storage (survives container restarts)
     nicegui_app.storage.path = STORAGE_PATH
 
-    # ── Health-check endpoint used by Docker HEALTHCHECK ─────────────────────
+    # Health-check endpoint polled by Docker HEALTHCHECK
     @ui.page("/healthz")
     def health():
         ui.label("ok")
 
-    # ── Main page — each browser tab gets a fresh RulesApp instance ──────────
+    # Main page — each browser tab gets its own RulesApp instance
     @ui.page("/")
     def index():
         rules_app = RulesApp()
         rules_app.load_data()
         rules_app.build_ui()
 
-    logger.info("Starting NiceGUI server …")
     ui.run(
         host=HOST,
         port=PORT,

@@ -190,8 +190,8 @@ def fetch_transactions(user_id: int = 1, limit: int = 1000) -> List[Dict[str, An
                     t.tag_name, t.tag_id, t.goal_name, t.goal_id, t.payment_method_name,
                     r.name as applied_rule_name
                 FROM ss_v_transactions t
-                LEFT JOIN ss_transactions st ON t.id = st.id
-                LEFT JOIN ss_categorization_rules r ON st.applied_rule_id = r.id
+                JOIN ss_transactions st ON st.id = t.id
+                LEFT JOIN ss_categorization_rules r ON r.id = st.applied_rule_id
                 WHERE t.user_id = %s
                 ORDER BY t.transaction_date DESC
                 LIMIT %s

@@ -301,18 +301,20 @@ class RulesApp:
             })
 
         columns = [
-            {'name': 'priority', 'label': 'Prio', 'field': 'priority', 'sortable': True, 'align': 'left'},
-            {'name': 'name', 'label': 'Rule Name', 'field': 'name', 'sortable': True, 'align': 'left'},
+            {'name': 'priority', 'label': 'Prio',     'field': 'priority', 'sortable': True, 'align': 'left'},
+            {'name': 'name',     'label': 'Rule Name','field': 'name',     'sortable': True, 'align': 'left'},
             {'name': 'category', 'label': 'Category', 'field': 'category', 'sortable': True},
-            {'name': 'method', 'label': 'Method', 'field': 'method', 'sortable': True},
-            {'name': 'is_active', 'label': 'Active', 'field': 'is_active'},
-            {'name': 'actions', 'label': 'Actions', 'field': 'id'},
+            {'name': 'method',   'label': 'Method',   'field': 'method',   'sortable': True},
+            {'name': 'is_active','label': 'Active',   'field': 'is_active'},
+            {'name': 'actions',  'label': 'Actions',  'field': 'id'},
         ]
 
         with ui.table(columns=columns, rows=rows, pagination=10, selection='multiple').classes('w-full stealth-table text-slate-300 border-none') as table:
             self.rules_table = table
-            table.add_slot('header', r'''<q-tr :props="props"><q-th v-for="col in props.cols" :key="col.name" :props="props" class="text-indigo-400 font-black uppercase tracking-[0.2em] text-[10px]">{{ col.label }}</q-th></q-tr>''')
-            table.add_slot('body-cell-priority', r'''<q-td :props="props"><span class="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-lg text-[10px] font-black tracking-widest border border-indigo-500/20">{{ props.value }}</span></q-td>''')
+            table.add_slot('header', r'''<q-tr :props="props"><q-th class="w-8"><q-checkbox v-model="props.selected" dense dark color="indigo" /></q-th><q-th v-for="col in props.cols" :key="col.name" :props="props" class="text-indigo-400 font-black uppercase tracking-[0.2em] text-[10px]">{{ col.label }}</q-th></q-tr>''')
+            table.add_slot('body-cell-priority', r'''<q-td :props="props"><div class="flex flex-col items-center gap-0.5"><span class="text-[8px] text-slate-600 font-mono leading-none">{{ props.rowIndex + 1 }}</span><span class="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-lg text-[10px] font-black tracking-widest border border-indigo-500/20">{{ props.value }}</span></div></q-td>''')
+
+
             table.add_slot('body-cell-name', r'''<q-td :props="props"><div class="text-white font-bold tracking-tight">{{ props.value }}</div><div class="text-[9px] text-slate-500 font-mono truncate max-w-[200px]">{{ props.row.dsl }}</div></q-td>''')
             table.add_slot('body-cell-is_active', r'''<q-td :props="props"><div :class="props.value ? 'bg-emerald-400/10 text-emerald-400 cursor-pointer hover:bg-emerald-400/20' : 'bg-slate-700/30 text-slate-500 cursor-pointer hover:bg-slate-700/50'" class="inline-block px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase border border-white/5" @click="$parent.$emit('toggle', props.row.id, !props.value)">{{ props.value ? 'Active' : 'Standby' }}</div></q-td>''')
             table.add_slot('body-cell-actions', r'''<q-td :props="props"><q-btn flat round dense icon="visibility" color="slate-400" @click="$parent.$emit('view', props.row.name, props.row.dsl)" class="hover:bg-white/5" /><q-btn flat round dense icon="edit" color="indigo-400" @click="$parent.$emit('edit', props.row.id)" class="hover:bg-indigo-400/10" /><q-btn flat round dense icon="content_copy" color="purple-400" @click="$parent.$emit('duplicate', props.row)" class="hover:bg-purple-400/10" /><q-btn flat round dense icon="delete" color="pink-400" @click="$parent.$emit('delete', props.row.id, props.row.name)" class="hover:bg-pink-400/10" /></q-td>''')
@@ -839,42 +841,93 @@ class RulesApp:
 
         with self.ledger_body:
             columns = [
-                {'name': 'id', 'label': 'ID', 'field': 'id', 'required': True, 'align': 'left'},
-                {'name': 'transaction_date', 'label': 'DATE', 'field': 'transaction_date', 'sortable': True, 'align': 'left'},
-                {'name': 'entity_name', 'label': 'ENTITY', 'field': 'entity_name', 'sortable': True, 'align': 'left'},
-                {'name': 'amount', 'label': 'AMOUNT', 'field': 'amount', 'sortable': True, 'align': 'right'},
-                {'name': 'category_id', 'label': 'CATEGORY', 'field': 'category_id', 'align': 'left'},
-                {'name': 'tag_id', 'label': 'TAG', 'field': 'tag_id', 'align': 'left'},
-                {'name': 'goal_id', 'label': 'GOAL', 'field': 'goal_id', 'align': 'left'},
-                {'name': 'payment_method', 'label': 'METHOD', 'field': 'payment_method_name', 'align': 'left'},
-                {'name': 'applied_rule', 'label': 'RULE', 'field': 'applied_rule_name', 'align': 'left'},
+                {'name': 'transaction_date',    'label': 'DATE',        'field': 'transaction_date',   'sortable': True,  'align': 'left'},
+                {'name': 'entity_name',         'label': 'ENTITY',      'field': 'entity_name',        'sortable': True,  'align': 'left'},
+                {'name': 'raw_details',         'label': 'RAW DETAILS', 'field': 'description',        'sortable': False, 'align': 'left'},
+                {'name': 'amount',              'label': 'AMOUNT',      'field': 'amount',             'sortable': True,  'align': 'right'},
+                {'name': 'type_name',           'label': 'TYPE',        'field': 'type_name',          'sortable': True,  'align': 'left'},
+                {'name': 'bank_account_number', 'label': 'ACCOUNT',     'field': 'bank_account_number','sortable': True,  'align': 'left'},
+                {'name': 'category_id',         'label': 'CATEGORY',    'field': 'category_id',        'align': 'left'},
+                {'name': 'tag_id',              'label': 'TAG',         'field': 'tag_id',             'align': 'left'},
+                {'name': 'goal_id',             'label': 'GOAL',        'field': 'goal_id',            'align': 'left'},
+                {'name': 'payment_method',      'label': 'METHOD',      'field': 'payment_method_name','align': 'left'},
+                {'name': 'applied_rule',        'label': 'RULE',        'field': 'applied_rule_name',  'align': 'left'},
             ]
 
             self.txns_table = ui.table(columns=columns, rows=filtered_txns, row_key='id', selection='multiple', pagination={'rowsPerPage': 10}).classes('w-full glass-card border border-white/5')
             with self.txns_table as table:
-                # Date format
+                table.add_slot('header', r'''
+                    <q-tr :props="props">
+                        <q-th class="w-8"><q-checkbox v-model="props.selected" dense dark color="indigo" /></q-th>
+                        <q-th v-for="col in props.cols" :key="col.name" :props="props"
+                            class="text-indigo-400 font-black uppercase tracking-[0.2em] text-[10px]">
+                            {{ col.label }}
+                        </q-th>
+                    </q-tr>
+                ''')
+                # Date
                 table.add_slot('body-cell-transaction_date', r'''
                     <q-td :props="props">
-                        <div class="text-[10px] text-slate-400 font-mono">{{ new Date(props.value).toLocaleDateString() }}</div>
+                        <div class="text-[10px] text-slate-400 font-mono whitespace-nowrap">{{ new Date(props.value).toLocaleDateString() }}</div>
                     </q-td>
                 ''')
 
-                # Amount highlighting
+                # Entity + account sub-label
+                table.add_slot('body-cell-entity_name', r'''
+                    <q-td :props="props">
+                        <div class="text-sm text-white font-semibold">{{ props.value || '—' }}</div>
+                    </q-td>
+                ''')
+
+                # Raw details: description + account + type in one cell
+                table.add_slot('body-cell-raw_details', r'''
+                    <q-td :props="props">
+                        <div class="max-w-[260px]">
+                            <div class="text-[11px] text-slate-300 font-mono truncate" :title="props.row.description">{{ props.row.description || '—' }}</div>
+                            <div class="flex gap-2 mt-0.5">
+                                <span class="text-[9px] text-slate-500 font-mono">{{ props.row.bank_account_number || '' }}</span>
+                            </div>
+                        </div>
+                    </q-td>
+                ''')
+
+                # Amount
                 table.add_slot('body-cell-amount', r'''
                     <q-td :props="props">
-                        <div class="font-mono font-bold" :class="props.value > 0 ? 'text-emerald-400' : 'text-rose-400'">
+                        <div class="font-mono font-bold whitespace-nowrap" :class="props.value > 0 ? 'text-emerald-400' : 'text-rose-400'">
                             ₹{{ Math.abs(props.value).toLocaleString('en-IN', {minimumFractionDigits: 2}) }}
                         </div>
                     </q-td>
                 ''')
 
-                # Applied Rule display
+                # Type badge (credit / debit)
+                table.add_slot('body-cell-type_name', r'''
+                    <q-td :props="props">
+                        <span v-if="props.value"
+                            class="text-[9px] font-black tracking-widest px-2 py-0.5 rounded uppercase"
+                            :class="props.value.toLowerCase() === 'credit'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'">
+                            {{ props.value }}
+                        </span>
+                        <span v-else class="text-slate-700 text-[9px]">—</span>
+                    </q-td>
+                ''')
+
+                # Account number (compact)
+                table.add_slot('body-cell-bank_account_number', r'''
+                    <q-td :props="props">
+                        <span class="text-[9px] text-slate-500 font-mono">{{ props.value || '—' }}</span>
+                    </q-td>
+                ''')
+
+                # Applied Rule — fixed: only show "—" when truly no rule, not "Manual"
                 table.add_slot('body-cell-applied_rule', r'''
                     <q-td :props="props">
-                        <div v-if="props.value" class="text-[9px] text-indigo-400/80 font-mono truncate max-w-[100px]" :title="props.value">
-                            {{ props.value }}
-                        </div>
-                        <div v-else class="text-[9px] text-slate-700 italic">Manual</div>
+                        <span v-if="props.value"
+                            class="text-[9px] text-indigo-400 font-mono bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 truncate block max-w-[120px]"
+                            :title="props.value">{{ props.value }}</span>
+                        <span v-else class="text-[9px] text-slate-700">—</span>
                     </q-td>
                 ''')
 
@@ -895,9 +948,10 @@ class RulesApp:
                             class="text-xs"
                         >
                             <template v-slot:selected-item="scope">
-                                <q-badge v-if="scope.opt" :style="{backgroundColor: scope.opt.color || '#475569'}" class="text-[9px] px-2 py-0.5 shadow-sm">
+                                <q-badge v-if="scope.opt && scope.opt.id" :style="{backgroundColor: scope.opt.color || '#475569'}" class="text-[9px] px-2 py-0.5 shadow-sm">
                                     {{ scope.opt.name }}
                                 </q-badge>
+                                <span v-else class="text-slate-600 text-[9px] italic">None</span>
                             </template>
                         </q-select>
                     </q-td>
@@ -920,10 +974,10 @@ class RulesApp:
                             class="text-xs"
                         >
                             <template v-slot:selected-item="scope">
-                                <q-badge v-if="scope.opt" :style="{backgroundColor: scope.opt.color || '#64748b'}" class="text-[9px] px-2 py-0.5">
+                                <q-badge v-if="scope.opt && scope.opt.id" :style="{backgroundColor: scope.opt.color || '#64748b'}" class="text-[9px] px-2 py-0.5">
                                     {{ scope.opt.name }}
                                 </q-badge>
-                                <span v-else class="text-slate-600 italic">None</span>
+                                <span v-else class="text-slate-600 text-[9px] italic">None</span>
                             </template>
                         </q-select>
                     </q-td>
@@ -946,17 +1000,17 @@ class RulesApp:
                             class="text-xs"
                         >
                             <template v-slot:selected-item="scope">
-                                <span v-if="scope.opt && scope.opt.id" class="text-indigo-300 font-bold tracking-tighter">{{ scope.opt.name }}</span>
-                                <span v-else class="text-slate-600 italic">None</span>
+                                <span v-if="scope.opt && scope.opt.id" class="text-indigo-300 font-bold tracking-tighter text-[9px]">{{ scope.opt.name }}</span>
+                                <span v-else class="text-slate-600 text-[9px] italic">None</span>
                             </template>
                         </q-select>
                     </q-td>
                 ''')
 
                 # Pass options to columns for JS access
-                table.columns[4]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.categories
-                table.columns[5]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.tags
-                table.columns[6]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.goals
+                table.columns[6]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.categories
+                table.columns[7]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.tags
+                table.columns[8]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.goals
 
                 table.on('update_cell', lambda msg: self.handle_cell_update(msg.args[0], msg.args[1], msg.args[2]))
 

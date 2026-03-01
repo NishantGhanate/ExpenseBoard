@@ -143,3 +143,6 @@ supserset_home
 
 # Volumes
 superset_home/
+celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal

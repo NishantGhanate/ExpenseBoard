@@ -34,7 +34,8 @@ async def file_upload(
     subject: str = Form(None),
     from_email: str = Form(None),
     to_email: str = Form(None),
-    date: str = Form(None)
+    date: str = Form(None),
+    account_number: str = Form(None)
 ):
     """
     Worker:
@@ -47,7 +48,7 @@ async def file_upload(
         size = 0
         stem = Path(file.filename).stem
         suffix = Path(file.filename).suffix
-        temp_path = CUSTOM_TEMP_DIR / f"{stem}_{time.time()}{suffix}"
+        temp_path = CUSTOM_TEMP_DIR / f"{time.time()}_{stem}{suffix}"
 
 
         with open(temp_path, "wb") as tmp:
@@ -80,7 +81,8 @@ async def file_upload(
                 'filename': file.filename,
                 'file_path': str(temp_path),
                 'from_email': from_email,
-                'to_email' : to_email
+                'to_email' : to_email,
+                'account_number': account_number
             },
             queue='statement_parser'
         )
@@ -90,6 +92,7 @@ async def file_upload(
             "subject": subject,
             "from_email": from_email,
             "date": date,
+            "account_number": account_number,
             'task_id': task_obj.id
         }
 

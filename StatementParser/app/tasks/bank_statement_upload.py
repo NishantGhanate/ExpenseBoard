@@ -29,7 +29,7 @@ logger = logging.getLogger("app")
 
 
 @shared_task(bind=True, name="app.tasks.bank_statement_upload.process_bank_pdf", queue="statement_parser")
-def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_email: str):
+def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_email: str, account_number: str = None):
 
     # OPEN ONE CONNECTION FOR THE ENTIRE TASK
     result = {}
@@ -57,9 +57,11 @@ def process_bank_pdf(self, filename: str, file_path: str, from_email: str, to_em
         result = parse_statement(pdf_path=file_path, bank_name=bank_name)
 
         # 4. Get/Create Account (Pass cur)
+        # Prefer explicitly provided account_number over the one parsed from the PDF
+        resolved_account_number = account_number or result["account_details"].get("number")
         account_details, is_success = get_or_create_bank_account(
             user_id=user_dict["id"],
-            number=result["account_details"].get("number"),
+            number=resolved_account_number,
             ifsc_code=result["account_details"].get("ifsc_code"),
             cur=cur
         )

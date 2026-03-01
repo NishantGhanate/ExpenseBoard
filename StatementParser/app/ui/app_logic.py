@@ -1,20 +1,23 @@
 import re
-from typing import Optional, Any, List, Dict
-from nicegui import ui
-from app.ui.db_manager import (
-    Rule, fetch_rules, fetch_rule_by_id, save_rule, delete_rule, 
-    toggle_rule_active, fetch_sample_transactions, fetch_categories, 
-    fetch_tags, fetch_payment_methods, fetch_transaction_types, 
-    fetch_goals, fetch_banks, fetch_users, save_category, delete_category,
-    fetch_transactions, update_transaction_field, process_transactions_with_rules,
-    update_transactions_bulk
-)
+from typing import Any, Dict, List, Optional
+
+from app.ui.db_manager import (Rule, delete_category, delete_rule, fetch_banks,
+                               fetch_categories, fetch_goals,
+                               fetch_payment_methods, fetch_rule_by_id,
+                               fetch_rules, fetch_sample_transactions,
+                               fetch_tags, fetch_transaction_types,
+                               fetch_transactions, fetch_users,
+                               process_transactions_with_rules, save_category,
+                               save_rule, toggle_rule_active,
+                               update_transaction_field,
+                               update_transactions_bulk)
 from app.ui.styles import apply_styles
+from nicegui import run, ui
 
 # Import rule engine for proper validation
 try:
-    from app.rule_engine.parser import parse, try_parse
     from app.rule_engine.evaluator import RuleEvaluator
+    from app.rule_engine.parser import parse, try_parse
     USE_FULL_PARSER = True
 except ImportError:
     USE_FULL_PARSER = False
@@ -31,7 +34,7 @@ class DSLValidator:
             result, error = try_parse(dsl_text)
             if error: return False, f"❌ {error}"
             return True, "✅ Valid syntax"
-        
+
         text = dsl_text.strip()
         if not text.lower().startswith('rule'): return False, "Must start with 'rule'"
         if not text.endswith(';'): return False, "Must end with ';'"
@@ -110,7 +113,7 @@ class RulesApp:
         self.txn_uncategorized_only = False
         self.txn_date_from = ""
         self.txn_date_to = ""
-        
+
         # Initialize data attributes to prevent crashes
         self.rules = []
         self.categories = []
@@ -284,12 +287,12 @@ class RulesApp:
                 if assigns.get('category_id') == self.category_filter:
                     new_filtered.append(r)
             filtered_rules = new_filtered
-            
+
         rows = []
         for r in filtered_rules:
             assigns = self.parse_assignments(r['dsl_text'])
             rows.append({
-                'id': r['id'], 'name': r['name'], 'priority': r['priority'], 
+                'id': r['id'], 'name': r['name'], 'priority': r['priority'],
                 'is_active': r['is_active'], 'category': self.get_name(self.categories, assigns.get('category_id')),
                 'tag': self.get_name(self.tags, assigns.get('tag_id')),
                 'type': self.get_name(self.transaction_types, assigns.get('type_id')),
@@ -336,7 +339,7 @@ class RulesApp:
                         with ui.row().classes('items-baseline gap-2 mt-2'):
                             ui.label(str(total_rules)).classes('text-5xl font-black text-white neon-text')
                             ui.label('entries').classes('text-xs text-slate-500')
-                
+
                 # Active Stat
                 with ui.card().classes('flex-1 glass-card p-6 rounded-3xl overflow-hidden relative cursor-pointer').on('click', lambda: self.set_filter('active', True)):
                      ui.element('div').classes('absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl')
@@ -381,15 +384,22 @@ class RulesApp:
 
     # Configuration for Guided Mode
     OPERATORS = {
-        'eq': 'Equals', 'neq': 'Not Equals', 
-        'gt': 'Greater Than', 'lt': 'Less Than', 
-        'gte': 'Greater/Equal', 'lte': 'Less/Equal',
-        'between': 'Between', 
-        'con': 'Contains', 'noc': 'Not Contains', 
-        'sw': 'Starts With', 'ew': 'Ends With', 
-        'regex': 'Regex Pattern', 
-        'in': 'In List', 'nin': 'Not In List', 
-        'null': 'Is Empty', 'nnull': 'Not Empty'
+        'eq': 'Equals',
+        'neq': 'Not Equals',
+        'gt': 'Greater Than',
+        'lt': 'Less Than',
+        'gte': 'Greater/Equal',
+        'lte': 'Less/Equal',
+        'between': 'Between',
+        'con': 'Contains',
+        'noc': 'Not Contains',
+        'sw': 'Starts With',
+        'ew': 'Ends With',
+        'regex': 'Regex Pattern',
+        'in': 'In List',
+        'nin': 'Not In List',
+        'null': 'Is Empty',
+        'nnull': 'Not Empty'
     }
 
     FIELD_CONFIG = {
@@ -411,19 +421,19 @@ class RulesApp:
             else:
                 with ui.card().classes('w-full p-4 bg-slate-800/40 border-dashed border-2 border-slate-700'):
                     ui.label('Logic Builder').classes('text-xs font-bold text-slate-500 mb-2 uppercase tracking-tighter')
-                    
+
                     # Field Selection
                     with ui.row().classes('w-full gap-2 mb-2'):
                         field_opts = {k: v['label'] for k, v in self.FIELD_CONFIG.items()}
                         self.guided_field = ui.select(label='Field', options=field_opts, value='description', on_change=lambda: self.render_form_inputs()).props('dense outlined dark color=indigo').classes('flex-1')
-                        
+
                         # Operator Selection based on field config
                         allowed_ops = self.FIELD_CONFIG[self.guided_field.value]['ops']
                         if allowed_ops == 'all':
                             op_opts = self.OPERATORS
                         else:
                             op_opts = {k: v for k, v in self.OPERATORS.items() if k in allowed_ops}
-                        
+
                         default_op = 'con' if 'con' in op_opts else 'eq'
                         self.guided_op = ui.select(label='Operator', options=op_opts, value=default_op, on_change=lambda: self.render_form_inputs()).props('dense outlined dark color=indigo').classes('flex-1')
 
@@ -434,7 +444,7 @@ class RulesApp:
 
                         if op_val in ('null', 'nnull'):
                             ui.label('No value needed').classes('text-[10px] text-slate-600 italic')
-                        
+
                         elif op_val == 'between':
                             with ui.row().classes('w-full gap-2'):
                                 if field_val == 'transaction_date':
@@ -443,10 +453,10 @@ class RulesApp:
                                 else:
                                     self.guided_value = ui.input(label='Low Value').props('dense outlined dark').classes('flex-1')
                                     self.guided_value_high = ui.input(label='High Value').props('dense outlined dark').classes('flex-1')
-                        
+
                         elif field_val == 'transaction_date':
                             self._render_date_input('Date Value', 'guided_value', width='w-full')
-                        
+
                         else:
                             self.guided_value = ui.input(label='Value').props('dense outlined dark color=indigo').classes('w-full')
 
@@ -486,26 +496,26 @@ class RulesApp:
         cat = self.guided_cat.value
         priority = int(self.priority_input.value)
         conditions = []
-        
+
         if op == 'between':
             val_high = self.guided_value_high.value if hasattr(self, 'guided_value_high') else ""
             conditions.append(f'{field}:between:"{val}":"{val_high}"')
-        elif op in ('null', 'nnull'): 
+        elif op in ('null', 'nnull'):
             conditions.append(f'{field}:{op}')
-        else: 
+        else:
             conditions.append(f'{field}:{op}:"{val}"')
-            
+
         # Add targeting if present
-        if self.guided_bank.value: 
+        if self.guided_bank.value:
             conditions.append(f'bank_account_id:eq:{self.guided_bank.value}')
         if self.guided_start_date.value and self.guided_end_date.value:
             conditions.append(f'transaction_date:between:"{self.guided_start_date.value}":"{self.guided_end_date.value}"')
-            
+
         dsl = f'rule "{name}" where {" and ".join(conditions)}'
-        if cat: 
+        if cat:
             dsl += f' assign category_id:{cat}'
         dsl += f' priority {priority};'
-        
+
         self.dsl_input.value = dsl
         self.on_dsl_change({'value': dsl})
 
@@ -560,21 +570,21 @@ class RulesApp:
                     ui.label('Rule Management').classes('text-2xl font-bold text-white')
                     ui.label('Toggle rules between Active and Inactive states').classes('text-xs text-slate-500')
                 ui.button('CLOSE', on_click=d.close).props('flat color=slate-400').classes('hover:bg-white/5')
-            
+
             with ui.column().classes('w-full gap-3 overflow-auto max-h-[600px] pr-2'):
                 for rule in self.rules:
                     is_active = rule['is_active']
                     with ui.row().classes('w-full p-4 glass-card rounded-2xl items-center group transition-colors hover:bg-white/5'):
                         # Status indicator line
                         ui.element('div').classes(f'w-1.5 h-10 rounded-full mr-4 { "bg-emerald-500" if is_active else "bg-slate-700" }')
-                        
+
                         with ui.column().classes('gap-0 flex-1 min-w-0'):
                             ui.label(rule['name']).classes('text-white font-bold text-lg truncate')
                             ui.label(rule['dsl_text']).classes('text-[10px] text-slate-500 font-mono truncate max-w-[500px]')
-                        
+
                         # UI status pill display
                         ui.label('ACTIVE' if is_active else 'STANDBY').classes(f'text-[9px] font-black tracking-widest px-2 py-0.5 rounded { "text-emerald-400 bg-emerald-500/10" if is_active else "text-slate-500 bg-slate-700/30" }')
-                        
+
                         # The actual switch
                         ui.switch(value=is_active, on_change=lambda e, rid=rule['id']: (toggle_rule_active(rid, e.value), self.refresh_all_ui())).props('color=emerald dense')
         d.open()
@@ -583,7 +593,7 @@ class RulesApp:
         with ui.dialog() as d, ui.card().classes('glass p-8 rounded-3xl'):
             ui.label("Permanent Extraction?").classes('text-lg font-bold text-white')
             with ui.row().classes('w-full justify-end gap-3 mt-8'):
-                def confirm(): 
+                def confirm():
                     if delete_category(cat_id): d.close(); self.refresh_all_ui(); self.show_category_master()
                 ui.button('EXTRACT', on_click=confirm).props('color=pink-500 unelevated')
         d.open()
@@ -600,10 +610,10 @@ class RulesApp:
 
     def show_sync_status(self):
         # Read current user from the select widget to avoid race conditions
-        from app.ui.db_manager import fetch_banks
+
         current_user = self.user_select.value if hasattr(self, 'user_select') and self.user_select else self.current_user_id
         current_banks = fetch_banks(current_user)
-        
+
         # Use a dialog instead of menu to avoid caching issues
         with ui.dialog() as sync_dialog, ui.card().classes('glass p-6 rounded-3xl w-80 border border-white/10'):
             ui.label('SYNC STATUS').classes('text-[10px] font-black text-indigo-400 tracking-[0.3em] mb-4')
@@ -626,7 +636,7 @@ class RulesApp:
         if not dsl:
             ui.notify("No DSL content to test", type="warning")
             return
-        
+
         rule_obj, error = try_parse(dsl)
         if error:
             ui.notify(f"Cannot dry run: {error}", type="negative")
@@ -636,11 +646,11 @@ class RulesApp:
             with ui.row().classes('w-full items-center justify-between mb-4'):
                 ui.label('DRY RUN TERMINAL').classes('text-[10px] font-black text-indigo-400 tracking-[0.4em]')
                 ui.button(icon='close', on_click=d.close).props('flat round dense color=slate-400')
-            
+
             samples = fetch_sample_transactions(self.current_user_id, 50)
             evaluator = RuleEvaluator()
             matches = [tx for tx in samples if evaluator.evaluate_rule(rule_obj, tx)]
-            
+
             if matches:
                 ui.label(f"Found {len(matches)} matches in last 50 transactions").classes('text-xs text-emerald-400 mb-4 font-bold')
                 with ui.column().classes('w-full gap-2 overflow-y-auto pr-2'):
@@ -655,7 +665,7 @@ class RulesApp:
                     ui.icon('search_off', size='4rem', color='slate-600')
                     ui.label('NO MATCHES FOUND').classes('text-slate-500 font-black tracking-widest text-xs')
                     ui.label('Try adjusting your filters or "where" clauses.').classes('text-slate-600 text-[10px]')
-            
+
             ui.button('CLOSE', on_click=d.close).props('flat color=slate-400').classes('mt-8 self-end')
         d.open()
 
@@ -715,36 +725,36 @@ class RulesApp:
                     with ui.element('div').classes('p-2 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/20'):
                         ui.icon('apps', color='white', size='1.5rem')
                     ui.label('EXPENSEBOARD').classes('text-2xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400')
-                
+
                 ui.space()
-                
+
                 with ui.row().classes('items-center gap-4'):
                     with ui.row().classes('items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full'):
                         ui.element('div').classes('w-2 h-2 rounded-full bg-green-400 animate-pulse')
                         ui.label('LIVE').classes('text-[10px] font-bold text-green-400 tracking-widest')
                         ui.button(on_click=self.show_sync_status).props('flat dense icon=expand_more color=green-400').classes('ml-1 scale-75')
-                    
+
                     user_options = {u['id']: u['name'] for u in self.users}
                     self.user_select = ui.select(
                         options=user_options,
                         value=self.current_user_id if self.current_user_id in user_options else None,
                         on_change=lambda e: self.change_user(e.value)
                     ).props('dark dense borderless hide-dropdown-icon').classes('text-slate-300 font-semibold hover:text-white transition-colors')
-                    
+
                     ui.button(icon='refresh', on_click=lambda: (self.refresh_all_ui(), ui.notify('Refreshed'))).props('flat round color=slate-400').classes('hover:rotate-180 transition-transform duration-500')
 
     def _render_main_layout(self):
         with ui.column().classes('w-full p-8 gap-8'):
             self.dashboard_container = ui.column().classes('w-full')
             with self.dashboard_container: self.render_dashboard()
-            
+
             with ui.row().classes('w-full gap-8 items-start'):
                 # Property Panel (Rule Editor)
                 self._render_property_panel()
-                
+
                 # Rule List Panel
                 self._render_rules_list_panel()
-            
+
             # Transaction Ledger Section
             self.render_ledger_section()
 
@@ -780,23 +790,23 @@ class RulesApp:
                 with ui.row().classes('items-center gap-4'):
                     ui.label('TRANSACTION LEDGER').classes('text-[10px] font-black text-indigo-400 tracking-[0.4em]')
                     ui.input(placeholder='Search entity/desc...', on_change=lambda e: (setattr(self, 'txn_search_text', e.value), self.refresh_transactions_table())).classes('w-64 glass rounded-xl px-4 py-1')
-                    
+
                     with ui.row().classes('items-center gap-1 bg-white/5 px-2 py-1 rounded-xl border border-white/10'):
                         ui.icon('event', color='slate-400', size='xs')
                         from_in = ui.input(placeholder='From', value=self.txn_date_from, on_change=lambda e: (setattr(self, 'txn_date_from', e.value), self.refresh_transactions_table())).props('dense borderless dark').classes('w-20 text-[10px] font-mono')
                         with from_in:
                             with ui.menu().props('no-parent-event') as m1: ui.date().bind_value(from_in)
                             ui.button(icon='arrow_drop_down', on_click=m1.open).props('flat dense').classes('cursor-pointer')
-                        
+
                         ui.label('-').classes('text-slate-600')
-                        
+
                         to_in = ui.input(placeholder='To', value=self.txn_date_to, on_change=lambda e: (setattr(self, 'txn_date_to', e.value), self.refresh_transactions_table())).props('dense borderless dark').classes('w-20 text-[10px] font-mono')
                         with to_in:
                             with ui.menu().props('no-parent-event') as m2: ui.date().bind_value(to_in)
                             ui.button(icon='arrow_drop_down', on_click=m2.open).props('flat dense').classes('cursor-pointer')
 
                     ui.switch('Uncategorized Only', value=self.txn_uncategorized_only, on_change=lambda e: (setattr(self, 'txn_uncategorized_only', e.value), self.refresh_transactions_table())).props('dense color=indigo dark').classes('text-[10px] font-bold text-slate-400 uppercase tracking-widest')
-                
+
                 with ui.row().classes('items-center gap-2'):
                     ui.button('APPLY ALL RULES', on_click=self.handle_run_engine, icon='auto_fix_high').props('outline color=indigo-400 size=sm').classes('px-4 rounded-xl font-bold')
                     with ui.element('q-btn-dropdown').props('flat round dense dropdown-icon=more_vert no-icon-animation color=slate-400'):
@@ -805,7 +815,7 @@ class RulesApp:
                                 with ui.item_section(): ui.label('Bulk Set Category').classes('text-xs')
                             with ui.item(on_click=lambda: self.show_bulk_update('tag_id')).props('clickable v-close-popup'):
                                 with ui.item_section(): ui.label('Bulk Set Tag').classes('text-xs')
-            
+
             self.ledger_body = ui.column().classes('w-full')
             with self.ledger_body:
                 self.refresh_transactions_table()
@@ -813,7 +823,7 @@ class RulesApp:
     def refresh_transactions_table(self):
         """Updates only the table content based on current filters."""
         self.ledger_body.clear()
-        
+
         # Filtering logic
         filtered_txns = self.transactions
         if self.txn_search_text:
@@ -821,7 +831,7 @@ class RulesApp:
             filtered_txns = [t for t in filtered_txns if s in (t['entity_name'] or '').lower() or s in (t['description'] or '').lower()]
         if self.txn_uncategorized_only:
             filtered_txns = [t for t in filtered_txns if not t['category_id']]
-        
+
         if self.txn_date_from:
             filtered_txns = [t for t in filtered_txns if str(t['transaction_date']) >= self.txn_date_from]
         if self.txn_date_to:
@@ -839,7 +849,7 @@ class RulesApp:
                 {'name': 'payment_method', 'label': 'METHOD', 'field': 'payment_method_name', 'align': 'left'},
                 {'name': 'applied_rule', 'label': 'RULE', 'field': 'applied_rule_name', 'align': 'left'},
             ]
-            
+
             self.txns_table = ui.table(columns=columns, rows=filtered_txns, row_key='id', selection='multiple', pagination={'rowsPerPage': 10}).classes('w-full glass-card border border-white/5')
             with self.txns_table as table:
                 # Date format
@@ -848,7 +858,7 @@ class RulesApp:
                         <div class="text-[10px] text-slate-400 font-mono">{{ new Date(props.value).toLocaleDateString() }}</div>
                     </q-td>
                 ''')
-                
+
                 # Amount highlighting
                 table.add_slot('body-cell-amount', r'''
                     <q-td :props="props">
@@ -892,7 +902,7 @@ class RulesApp:
                         </q-select>
                     </q-td>
                 ''')
-                
+
                 # Tag Dropdown
                 table.add_slot('body-cell-tag_id', r'''
                     <q-td :props="props">
@@ -947,7 +957,7 @@ class RulesApp:
                 table.columns[4]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.categories
                 table.columns[5]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.tags
                 table.columns[6]['options'] = [{'id': None, 'name': 'None', 'color': '#1e293b'}] + self.goals
-                
+
                 table.on('update_cell', lambda msg: self.handle_cell_update(msg.args[0], msg.args[1], msg.args[2]))
 
     def handle_cell_update(self, txn_id: int, field: str, value: Any):
@@ -959,19 +969,19 @@ class RulesApp:
             ui.notify("Update failed", type='negative')
 
     async def handle_run_engine(self):
-        from nicegui import run
-        
+
+
         # Use a dialog with spinner for better UX
         with ui.dialog() as progress_dialog, ui.card().classes('glass p-8 rounded-3xl items-center gap-4'):
             ui.spinner(size='lg', color='indigo')
             ui.label('Running rule engine...').classes('text-white font-bold')
-        
+
         progress_dialog.open()
-        
+
         try:
             # Run the heavy processing in a separate thread to keep UI responsive
             count = await run.cpu_bound(process_transactions_with_rules, self.current_user_id, self.rules)
-            
+
             progress_dialog.close()
             if count > 0:
                 ui.notify(f"SUCCESS: Processed {count} transactions!", type='positive', color='emerald-500', icon='done_all', timeout=4)
@@ -986,18 +996,18 @@ class RulesApp:
         if not self.txns_table.selected:
             ui.notify("No transactions selected", type="warning")
             return
-        
+
         ids = [row['id'] for row in self.txns_table.selected]
         options = []
         if field == 'category_id': options = self.categories
         elif field == 'tag_id': options = self.tags
-        
+
         with ui.dialog() as d, ui.card().classes('glass p-8 rounded-3xl w-96 border border-white/10'):
             ui.label(f'Bulk Set {field.split("_")[0].capitalize()}').classes('text-xl font-bold text-white mb-4')
             ui.label(f'Will update {len(ids)} transactions').classes('text-xs text-slate-500 mb-6')
-            
+
             sel = ui.select(options={o['id']: o['name'] for o in options}, label='Select Value').classes('w-full').props('outlined dark')
-            
+
             with ui.row().classes('w-full justify-end mt-8 gap-4'):
                 ui.button('CANCEL', on_click=d.close).props('flat color=slate-400')
                 ui.button('APPLY', on_click=lambda: self.handle_bulk_update(ids, field, sel.value, d)).props('color=indigo-500 unelevated')

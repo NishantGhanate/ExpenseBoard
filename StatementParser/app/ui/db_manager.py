@@ -1,9 +1,12 @@
 import os
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
 import psycopg
+from app.rule_engine.evaluator import RuleEvaluator
+from app.rule_engine.parser import try_parse
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
-from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
 
 load_dotenv()
 
@@ -24,7 +27,7 @@ def get_db_url() -> str:
         host = os.getenv("DATABASE_HOST")
         port = os.getenv("DATABASE_PORT", "5432")
         db_name = os.getenv("DATABASE_NAME")
-        
+
         if all([user, password, host, db_name]):
             url = f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
         else:
@@ -39,6 +42,7 @@ def get_connection():
         raise
 
 import functools
+
 
 def safe_db_call(default_return=None):
     """Decorator to wrap DB calls with try-except block."""
@@ -132,7 +136,7 @@ def fetch_banks(user_id: int = 1) -> List[Dict[str, Any]]:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id, user_id, number, ifsc_code, type, is_active 
+                SELECT id, user_id, number, ifsc_code, type, is_active
                 FROM ss_bank_accounts WHERE user_id = %s AND is_active = TRUE
             """, (user_id,))
             return cur.fetchall()
@@ -148,13 +152,13 @@ def save_category(cat: dict) -> bool:
         with conn.cursor() as cur:
             if cat.get('id'):
                 cur.execute("""
-                    UPDATE ss_categories 
-                    SET name = %s, type = %s, color = %s 
+                    UPDATE ss_categories
+                    SET name = %s, type = %s, color = %s
                     WHERE id = %s
                 """, (cat['name'], cat.get('type'), cat.get('color'), cat['id']))
             else:
                 cur.execute("""
-                    INSERT INTO ss_categories (name, type, color) 
+                    INSERT INTO ss_categories (name, type, color)
                     VALUES (%s, %s, %s)
                 """, (cat['name'], cat.get('type'), cat.get('color')))
             conn.commit()
@@ -180,7 +184,7 @@ def fetch_transactions(user_id: int = 1, limit: int = 1000) -> List[Dict[str, An
                 conn.rollback()
 
             cur.execute("""
-                SELECT 
+                SELECT
                     t.id, t.transaction_date, t.entity_name, t.amount, t.currency, t.description,
                     t.bank_account_number, t.type_name, t.category_name, t.category_id,
                     t.tag_name, t.tag_id, t.goal_name, t.goal_id, t.payment_method_name,
@@ -196,12 +200,11 @@ def fetch_transactions(user_id: int = 1, limit: int = 1000) -> List[Dict[str, An
 
 @safe_db_call(default_return=0)
 def process_transactions_with_rules(user_id: int, rules_list: List[Dict[str, Any]]) -> int:
-    from app.rule_engine.parser import try_parse
-    from app.rule_engine.evaluator import RuleEvaluator
-    
+
+
     # Fetch uncategorized transactions
-    txns = fetch_sample_transactions(user_id, 500) 
-    
+    txns = fetch_sample_transactions(user_id, 500)
+
     evaluator = RuleEvaluator()
     parsed_rules = []
     for r in rules_list:
@@ -209,7 +212,7 @@ def process_transactions_with_rules(user_id: int, rules_list: List[Dict[str, Any
             rule_obj, _ = try_parse(r['dsl_text'])
             if rule_obj:
                 parsed_rules.append((r['id'], rule_obj))
-    
+
     updated_count = 0
     with get_connection() as conn:
         with conn.cursor() as cur:
@@ -219,17 +222,17 @@ def process_transactions_with_rules(user_id: int, rules_list: List[Dict[str, Any
                         # Apply assignments
                         assignments = rule_obj.assignment.fields
                         if not assignments: continue
-                        
+
                         set_clauses = []
                         params = []
                         for field, val in assignments.items():
                             set_clauses.append(f"{field} = %s")
                             params.append(val)
-                        
+
                         set_clauses.append("applied_rule_id = %s")
                         params.append(rule_id)
                         params.append(tx['id'])
-                        
+
                         query = f"UPDATE ss_transactions SET {', '.join(set_clauses)} WHERE id = %s"
                         cur.execute(query, tuple(params))
                         updated_count += 1

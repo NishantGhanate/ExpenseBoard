@@ -215,11 +215,22 @@ services:
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_PORT: ${DATABASE_PORT}
+      RULES_APP_HOST: 0.0.0.0
+      RULES_APP_PORT: 8085
+      RULES_APP_STORAGE: /app/ui_storage
+      NICEGUI_SECRET: ${NICEGUI_SECRET:-expenseboard-secret-change-me}
     volumes:
       - ./StatementParser:/app
+      - rules_app_storage:/app/ui_storage
     depends_on:
       - postgres
-    command: python app/ui/rules_app.py
+    command: python run_ui.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8085/healthz')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
       - internal
       - shared_network
@@ -227,6 +238,7 @@ services:
 volumes:
   superset_pgdata:
   superset_redisdata:
+  rules_app_storage:
 
 
 networks:

@@ -159,3 +159,4 @@ WHERE reference_id IS NULL;
 
 -- Search performance for entity names
 CREATE INDEX idx_ss_txn_entity_name ON ss_transactions USING gin (entity_name gin_trgm_ops);
+COMMIT;

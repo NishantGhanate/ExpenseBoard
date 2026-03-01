@@ -49,9 +49,9 @@ celery_app.conf.update(
 
 # Schedule example
 celery_app.conf.beat_schedule = {
-    "daily-task": {
+    "monthly-cleanup": {
         "task": "app.tasks.cleanup.cleanup_resources",
-        "schedule": crontab(hour="9-21", day_of_week="1-5"),
+        "schedule": crontab(hour=3, minute=0, day_of_month=1),  # Runs once a month on the 1st at 3:00 AM
     },
 }
 

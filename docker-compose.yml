@@ -22,7 +22,7 @@ services:
     image: redis:${REDIS_VERSION:-7}
     container_name: superset_redis
     restart: always
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     volumes:
       - superset_redisdata:/data
     ports:
@@ -32,7 +32,7 @@ services:
       - shared_network
 
   superset:
-    image: ${SUPERSET_IMAGE:-superset-custom}}
+    image: ${SUPERSET_IMAGE:-superset-custom}
     container_name: superset_app
     env_file:
       - .env
@@ -53,7 +53,7 @@ services:
       - ./SuperSetBoard/superset_home:/app/superset_home
       - ./SuperSetBoard/superset_config.py:/app/pythonpath/superset_config.py
       - ./SuperSetBoard/init_superset.sh:/init_superset.sh
-    entrypoint: ["/bin/bash", "/init_superset.sh"]
+    entrypoint: [ "/bin/bash", "/init_superset.sh" ]
     depends_on:
       - postgres
       - redis
@@ -91,7 +91,7 @@ services:
   # Statement Parser API
   statement-parser-api:
     build: ./StatementParser
-    container_name: statement_parser_api  # for auto scaling remove this
+    container_name: statement_parser_api # for auto scaling remove this
     restart: unless-stopped
     env_file:
       - .env
@@ -175,7 +175,6 @@ services:
     networks:
       - internal
       - shared_network
-
     # Celery Flower (Monitoring)
 
   statement-parser-flower:
@@ -195,18 +194,52 @@ services:
       # Map host 5556 to container 5555
       - "${FLOWER_PORT:-5556}:5555"
     command: >
-      celery flower
-      --port=5555
-      --broker=${CELERY_BROKER_URL}
-      --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+      celery flower --port=5555 --broker=${CELERY_BROKER_URL} --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
     networks:
       - internal
       - shared_network
 
+  # NiceGUI Rules App
+  rules-app:
+    build: ./StatementParser
+    container_name: rules_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${RULES_APP_PORT:-8085}:8085"
+    environment:
+      PYTHONPATH: /app
+      DATABASE_HOST: postgres
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_PORT: ${DATABASE_PORT}
+      RULES_APP_HOST: 0.0.0.0
+      RULES_APP_PORT: 8085
+      RULES_APP_STORAGE: /app/ui_storage
+      NICEGUI_SECRET: ${NICEGUI_SECRET:-expenseboard-secret-change-me}
+    volumes:
+      - ./StatementParser:/app
+      - rules_app_storage:/app/ui_storage
+    depends_on:
+      - postgres
+    command: python run_ui.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8085/healthz')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      - internal
+      - shared_network
 
 volumes:
   superset_pgdata:
   superset_redisdata:
+  rules_app_storage:
+
 
 networks:
   internal:

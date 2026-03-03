@@ -103,6 +103,8 @@ docker exec -it statement_parser_api python -m alembic upgrade head
 # Access services
 - API: http://localhost:8000/docs
 - Superset: http://localhost:8088
+
+> docker exec -it superset_app superset fab reset-password --username <name>
 ```
 
 ### Environment Variables

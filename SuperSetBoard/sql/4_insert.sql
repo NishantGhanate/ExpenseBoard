@@ -26,8 +26,11 @@ INSERT INTO ss_tags (name, is_active, color) VALUES
 ('recurring', TRUE, '#6366F1'),
 ('one-time', TRUE, '#8B5CF6'),
 ('essential', TRUE, '#EF4444'),
-('discretionary', TRUE, '#14B8A6');
-
+('discretionary', TRUE, '#14B8A6'),
+('lifestyle', TRUE, '#14B8A6'),
+('food', TRUE, '#14B8A6'),
+('shopping', TRUE, '#14B8A6'),
+('credit card bills', TRUE, '#14B8A6');
 -- ============================================
 -- 3. CATEGORIES (BINS)
 -- Truncate table ss_categories RESTART IDENTITY CASCADE;
@@ -50,7 +53,10 @@ INSERT INTO ss_categories (name, type, color, is_active) VALUES
 ('Atm Withdraw', 'EXPENSE', '#22C55E', TRUE),
 ('General expense', 'EXPENSE', '#22C55E', TRUE),
 ('Other Income', 'INCOME', '#22C55E', TRUE),
-('Charges', 'EXPENSE', '#22C55E', TRUE)
+('Charges', 'EXPENSE', '#22C55E', TRUE),
+('Sbi credit card', 'EXPENSE', '#EF4444', TRUE),
+('Travel', 'EXPENSE', '#EF4444', TRUE),
+('Hotel Stay', 'EXPENSE', '#EF4444', TRUE)
 
 ON CONFLICT (name) DO UPDATE SET
     type = EXCLUDED.type,

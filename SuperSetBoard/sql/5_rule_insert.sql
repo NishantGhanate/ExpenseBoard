@@ -101,4 +101,6 @@ INSERT INTO ss_categorization_rules (name, dsl_text, priority, user_id, is_activ
 
 ('Type - Bank transfer', 'rule "Bank transfer" where description:regex:"Dr. Tran|Closure Proceeds":i assign payment_method_id:7 priority 10;', 10, 1, TRUE);
 
+('Type - Bank transfer', 'rule "SBI Credit Card" where description:con:"SB-MOPS":i and type:eq:"debit":i assign category_id:18 type_id:2 priority 15;', 10, 1, TRUE);
+
 COMMIT;

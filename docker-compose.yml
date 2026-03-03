@@ -207,7 +207,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${RULES_APP_PORT:-8085}:8085"
+      - "${RULES_APP_PORT:-8002}:8002"
     environment:
       PYTHONPATH: /app
       DATABASE_HOST: postgres
@@ -216,7 +216,7 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_PORT: ${DATABASE_PORT}
       RULES_APP_HOST: 0.0.0.0
-      RULES_APP_PORT: 8085
+      RULES_APP_PORT: 8002
       RULES_APP_STORAGE: /app/ui_storage
       NICEGUI_SECRET: ${NICEGUI_SECRET:-expenseboard-secret-change-me}
     volumes:

@@ -84,7 +84,9 @@ cp .env.example .env
 # Edit .env with your configuration
 
 
-docker build --no-cache -t superset-custom .
+> docker build --no-cache -t superset-custom .
+> docker-compose up -d --build statement-parser-rules-app
+
 
 # Start all services
 docker-compose up -d
